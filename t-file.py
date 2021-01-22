@@ -16,10 +16,3 @@ print(s)
 s = s / 2
 print(math.sqrt(s))
 print(df.describe())
-
-
-
-
-
-
-
