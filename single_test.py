@@ -57,7 +57,7 @@ def split_by_rate():
     store_df = DataFrame([], columns=['id', 'index', 'time', 'score'])
     while front < data_sum:
         data = df.loc[front:back, :]
-        df_sample = data.sample(frac=sam,  replace=False, axis=0)
+        df_sample = data.sample(frac=sam, replace=False, axis=0)
         store_df = store_df.append(df_sample, ignore_index=True)
         front = back
         back = back + hist
@@ -341,5 +341,61 @@ def without_z_layer():
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
 
 
+def DBSCAN(data, Eps=0.01, MinPts=5):
+    class_list = []
+    f_core = set()  # 存放不是核心点
+    y_core = {}  # 存放是核心点
+    for core in data:  # 遍历所有找出核心点
+        t_core = set()
+        for score in data:  # 找出核心点在Eps邻域中的点
+            if abs(core - score) <= Eps:
+                t_core.add(score)
+        if len(t_core) > MinPts:  # 是核心点
+            y_core[core] = t_core
+        else:
+            f_core.add(core)
+    ct_cores = y_core.keys()  # 核心点集
+    ct_cores = set(ct_cores)
+    # 聚类
+    print(y_core)
+    while len(ct_cores) != 0:
+        print(len(ct_cores))
+        core = list(ct_cores)[0]
+        friends = y_core[core]  # set类型
+        now_class = friends.copy()
+        pre_class = set()
+        # 聚类运算
+        while pre_class != now_class:
+            pre_class = now_class
+            now_class.clear()
+            point_list = list(pre_class)
+            for point in point_list:
+                try:  # 核心点
+                    core_friend = y_core[point]  # 获取这个点的邻域点
+                    now_class = now_class + core_friend
+                except:  # 非核心点
+                    now_class.add(point)
+        class_list.append(now_class)
+        ct_cores = ct_cores - now_class
+    return class_list
+
+
+def Layer_by_DBSCAN():
+    engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
+    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    cursor = connect.cursor()
+    sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    data = []
+    for i in result:
+        if float(i[0]) == 0:
+            continue
+        data.append(float(i[0]))
+    print('DBSCAN START')
+    layer = DBSCAN(data)
+    print(layer)
+
+
 if __name__ == '__main__':
-    without_z_layer()
+    Layer_by_DBSCAN()
