@@ -341,7 +341,7 @@ def without_z_layer():
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
 
 
-def DBSCAN(data, Eps=0.01, MinPts=5):
+def DBSCAN(data, Eps=0.005, MinPts=5):
     class_list = []
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
@@ -350,13 +350,15 @@ def DBSCAN(data, Eps=0.01, MinPts=5):
         for score in data:  # 找出核心点在Eps邻域中的点
             if abs(core - score) <= Eps:
                 t_core.add(score)
-        if len(t_core) > MinPts:  # 是核心点
+        if len(t_core) >= MinPts:  # 是核心点
             y_core[core] = t_core
         else:
             f_core.add(core)
     ct_cores = y_core.keys()  # 核心点集
     ct_cores = set(ct_cores)
     # 聚类
+    for key in y_core.keys():
+        print(key, y_core[key])
     while len(ct_cores) != 0:
         print(len(ct_cores))
         t = list(ct_cores)
@@ -372,8 +374,9 @@ def DBSCAN(data, Eps=0.01, MinPts=5):
             for point in point_list:
                 try:  # 核心点
                     core_friend = y_core[point]  # 获取这个点的邻域点
-                    now_class = now_class + core_friend
-                except:  # 非核心点
+                    now_class = now_class | set(core_friend)
+                except Exception as e:  # 非核心点
+                    print(e)
                     now_class.add(point)
         class_list.append(now_class)
         ct_cores = ct_cores - now_class
@@ -393,7 +396,7 @@ def Layer_by_DBSCAN():
     print('DBSCAN START')
     layer = DBSCAN(data)
     for i in layer:
-        print(i)
+        print(sorted(i))
 
 
 if __name__ == '__main__':
