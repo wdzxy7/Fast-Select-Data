@@ -360,13 +360,14 @@ def DBSCAN(data, Eps=0.01, MinPts=5):
     print(y_core)
     while len(ct_cores) != 0:
         print(len(ct_cores))
-        core = list(ct_cores)[0]
+        t = list(ct_cores)
+        core = t.pop()
         friends = y_core[core]  # set类型
         now_class = friends.copy()
         pre_class = set()
         # 聚类运算
         while pre_class != now_class:
-            pre_class = now_class
+            pre_class = now_class.copy()
             now_class.clear()
             point_list = list(pre_class)
             for point in point_list:
@@ -394,7 +395,8 @@ def Layer_by_DBSCAN():
         data.append(float(i[0]))
     print('DBSCAN START')
     layer = DBSCAN(data)
-    print(layer)
+    for i in layer:
+        print(i)
 
 
 if __name__ == '__main__':
