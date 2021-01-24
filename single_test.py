@@ -389,8 +389,6 @@ def Layer_by_DBSCAN():
     result = cursor.fetchall()
     data = []
     for i in result:
-        if float(i[0]) == 0:
-            continue
         data.append(float(i[0]))
     print('DBSCAN START')
     layer = DBSCAN(data)
