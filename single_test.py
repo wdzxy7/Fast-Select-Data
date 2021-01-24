@@ -357,7 +357,6 @@ def DBSCAN(data, Eps=0.01, MinPts=5):
     ct_cores = y_core.keys()  # 核心点集
     ct_cores = set(ct_cores)
     # 聚类
-    print(y_core)
     while len(ct_cores) != 0:
         print(len(ct_cores))
         t = list(ct_cores)
