@@ -378,6 +378,8 @@ def Layer_by_DBSCAN():
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
+    sql = 'TRUNCATE TABLE unknown_data.small_test;'
+    cursor.execute(sql)
     sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     result = cursor.fetchall()
