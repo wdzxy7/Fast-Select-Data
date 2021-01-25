@@ -348,7 +348,7 @@ def DBSCAN(data, Eps=0.002, MinPts=3):
     for core in data:  # 遍历所有找出核心点
         t_core = set()
         for score in data:  # 找出核心点在Eps邻域中的点
-            if abs(core - score) <= Eps:
+            if round(abs(core - score), 4) <= Eps:
                 t_core.add(score)
         if len(t_core) >= MinPts:  # 是核心点
             y_core[core] = t_core
@@ -389,6 +389,8 @@ def Layer_by_DBSCAN():
     result = cursor.fetchall()
     data = []
     for i in result:
+        if float(i[0]) == 0:
+            continue
         data.append(float(i[0]))
     print('DBSCAN START')
     layer = DBSCAN(data)
