@@ -133,36 +133,21 @@ def k_means_two(data):
     return result
 
 
-def layered_by_k_means():
-    engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
-    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
-    cursor = connect.cursor()
-    sql = 'TRUNCATE TABLE unknown_data.small_test;'
-    cursor.execute(sql)
-    sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
-    cursor.execute(sql)
-    result = cursor.fetchall()
-    data = []
-    for i in result:
-        data.append(float(i[0]))
-    layer = k_means_three(data)
-    print(layer)
-    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
-    cursor.execute(sql)
-    sql_result = cursor.fetchall()
-    df = DataFrame(sql_result, columns=['score']).astype('float')
-    data_sum = len(sql_result)
-    df_list = []
-    # 取出每层的数据
+def spilt_data_by_layer(layer, data_df):
+    return_df = []
     temp_df = DataFrame()
     for lay in layer:
         for score in lay:
-            specimen = df.loc[df['score'] == score, :]
+            specimen = data_df.loc[data_df['score'] == score, :]
             temp_df = temp_df.append(specimen, ignore_index=True)
         t_df = temp_df.copy(deep=True)
-        df_list.append(t_df)
+        return_df.append(t_df)
         temp_df.drop(temp_df.index, inplace=True)
         temp_df.columns = ['score']
+    return return_df
+
+
+def sampling_data(engine, df_list, data_sum):
     denominator = 0
     molecular_list = []
     for df in df_list:
@@ -184,6 +169,30 @@ def layered_by_k_means():
         df_sample = df.sample(frac=sam, replace=False, axis=0)
         print(df_sample)
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
+
+
+def layered_by_k_means():
+    engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
+    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    cursor = connect.cursor()
+    sql = 'TRUNCATE TABLE unknown_data.small_test;'
+    cursor.execute(sql)
+    sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    data = []
+    for i in result:
+        data.append(float(i[0]))
+    layer = k_means_three(data)
+    print(layer)
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    cursor.execute(sql)
+    sql_result = cursor.fetchall()
+    df = DataFrame(sql_result, columns=['score']).astype('float')
+    data_sum = len(sql_result)
+    # 取出每层的数据
+    df_list = spilt_data_by_layer(layer, df)
+    sampling_data(engine, df_list, data_sum)
 
 
 # 分为0，非0两层
@@ -394,6 +403,7 @@ def Layer_by_DBSCAN():
         data.append(float(i[0]))
     print('DBSCAN START')
     layer = DBSCAN(data)
+
     for i in layer:
         print(sorted(i))
 
