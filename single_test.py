@@ -147,7 +147,7 @@ def spilt_data_by_layer(layer, data_df):
     return return_df
 
 
-def sampling_data(engine, df_list, data_sum):
+def sampling_data(engine, df_list, data_sum, sample_sum):
     denominator = 0
     molecular_list = []
     for df in df_list:
@@ -158,7 +158,7 @@ def sampling_data(engine, df_list, data_sum):
         if s < 0.0000000000000001:
             s = 0
         denominator = denominator + s
-        molecular = 788 * w * std
+        molecular = sample_sum * w * std
         molecular_list.append(molecular)
     for molecular, df in zip(molecular_list, df_list):
         specimen = molecular / denominator
@@ -172,6 +172,7 @@ def sampling_data(engine, df_list, data_sum):
 
 
 def layered_by_k_means():
+    sample_sum = 788
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
@@ -192,11 +193,12 @@ def layered_by_k_means():
     data_sum = len(sql_result)
     # 取出每层的数据
     df_list = spilt_data_by_layer(layer, df)
-    sampling_data(engine, df_list, data_sum)
+    sampling_data(engine, df_list, data_sum, sample_sum)
 
 
 # 分为0，非0两层
 def two_layer():
+    sample_sum = 788
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
@@ -222,32 +224,13 @@ def two_layer():
         specimen = df.loc[df['score'] == score, :]
         fz_df = fz_df.append(specimen, ignore_index=True)
     fz_df.columns = ['score']
-    denominator = 0
-    molecular_list = []
     df_list = [z_df, fz_df]
-    for df in df_list:
-        w = len(df) / data_sum  # 数据占比
-        desc = df.describe()
-        std = float(desc.iloc[2])  # 标准差
-        s = w * std
-        if s < 0.0000000000000001:
-            s = 0
-        denominator = denominator + s
-        molecular = 788 * w * std
-        molecular_list.append(molecular)
-    for molecular, df in zip(molecular_list, df_list):
-        specimen = molecular / denominator
-        sam = float(specimen) / len(df)
-        print(sam)
-        if sam > 1:
-            sam = 1
-        df_sample = df.sample(frac=sam, replace=False, axis=0)
-        print(df_sample)
-        df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
+    sampling_data(engine, df_list, data_sum, sample_sum)
 
 
 # 从非0数据项直接抽取
 def without_zero():
+    sample_sum = 12
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
@@ -271,7 +254,7 @@ def without_zero():
         specimen = df.loc[df['score'] == score, :]
         fz_df = fz_df.append(specimen, ignore_index=True)
     fz_df.columns = ['score']
-    df_sample = fz_df.sample(frac=12 / len(fz_df), replace=False, axis=0)
+    df_sample = fz_df.sample(frac=sample_sum / len(fz_df), replace=False, axis=0)
     print(df_sample)
     print(df_sample.describe())
     df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
@@ -279,6 +262,7 @@ def without_zero():
 
 # 把非0进行聚类后分层
 def without_z_layer():
+    sample_sum = 12
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
@@ -328,7 +312,7 @@ def without_z_layer():
         if s < 0.0000000000000001:
             s = 0
         denominator = denominator + s
-        molecular = 12 * w * std
+        molecular = sample_sum * w * std
         print(len(df), data_sum, w, std, molecular)
         molecular_list.append(molecular)
     print('molecular', molecular_list)
@@ -390,6 +374,7 @@ def DBSCAN(data, Eps=0.002, MinPts=3):
 
 
 def Layer_by_DBSCAN():
+    sample_sum = 12
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
@@ -403,9 +388,13 @@ def Layer_by_DBSCAN():
         data.append(float(i[0]))
     print('DBSCAN START')
     layer = DBSCAN(data)
-
-    for i in layer:
-        print(sorted(i))
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    cursor.execute(sql)
+    sql_result = cursor.fetchall()
+    df = DataFrame(sql_result, columns=['score']).astype('float')
+    df_list = spilt_data_by_layer(layer, df)
+    data_sum = len(sql_result)
+    sampling_data(engine, df_list, data_sum, sample_sum)
 
 
 if __name__ == '__main__':
