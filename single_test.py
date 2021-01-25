@@ -341,7 +341,7 @@ def without_z_layer():
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
 
 
-def DBSCAN(data, Eps=0.005, MinPts=5):
+def DBSCAN(data, Eps=0.002, MinPts=3):
     class_list = []
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
@@ -357,8 +357,6 @@ def DBSCAN(data, Eps=0.005, MinPts=5):
     ct_cores = y_core.keys()  # 核心点集
     ct_cores = set(ct_cores)
     # 聚类
-    for key in y_core.keys():
-        print(key, y_core[key])
     while len(ct_cores) != 0:
         print(len(ct_cores))
         t = list(ct_cores)
@@ -375,8 +373,7 @@ def DBSCAN(data, Eps=0.005, MinPts=5):
                 try:  # 核心点
                     core_friend = y_core[point]  # 获取这个点的邻域点
                     now_class = now_class | set(core_friend)
-                except Exception as e:  # 非核心点
-                    print(e)
+                except:  # 非核心点
                     now_class.add(point)
         class_list.append(now_class)
         ct_cores = ct_cores - now_class
