@@ -355,7 +355,6 @@ def DBSCAN(data, Eps=0.002, MinPts=3):
     ct_cores = set(ct_cores)
     # 聚类
     while len(ct_cores) != 0:
-        print(len(ct_cores))
         t = list(ct_cores)
         core = t.pop()
         friends = y_core[core]  # set类型
