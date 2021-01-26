@@ -1,8 +1,6 @@
 from pandas import DataFrame
 import math
-s1 = set()
-s1.add(1)
-s2 = set()
-s2.add(2)
-if s2 == s1:
-    print(1)
+point_friends = [(1,2), (2,4), (5,6)]
+sorted_list = []
+point_friends[0] = (2,2)
+print(point_friends)

@@ -403,5 +403,94 @@ def Layer_by_DBSCAN():
     sampling_data(engine, df_list, data_sum, sample_sum)
 
 
+def get_tup_index(lis):
+    ind = []
+    for i in lis:
+        ind.append(i[0])
+    return ind
+
+
+def OPTICS(data, Eps=0.002, MinPts=3):
+    f_core = set()  # 存放不是核心点
+    y_core = {}  # 存放是核心点
+    for core in data:  # 遍历所有找出核心点
+        t_core = set()
+        for score in data:  # 找出核心点在Eps邻域中的点
+            if round(abs(core - score), 4) <= Eps:
+                tup = (score, (abs(core - score)))
+                t_core.add(tup)
+        if len(t_core) >= MinPts:  # 是核心点
+            y_core[core] = t_core
+        else:
+            f_core.add(core)
+    core_points = y_core.keys()
+    core_list = list(y_core.keys())  # 核心点集
+    extend_set = set()  # 存放拓展了的点
+    result_list = []  # 结果队列
+    sorted_list = []  # 有序队列
+    while len(core_list) != 0:
+        point = core_list[0]
+        if point not in extend_set:
+            del core_list[0]
+            extend_set.add(point)
+            result_list.append(point)
+        else:
+            continue
+        point_friends = list(y_core[point])
+        ind = get_tup_index(sorted_list)
+        if len(ind) == 0:  # 有序队列为空 直接加入
+            sorted_list = sorted_list + point_friends
+        else:  # 不为空可能替换
+            for p in point_friends:
+                try:
+                    k = ind.index(p[0])
+                    distance = sorted_list[k][1]
+                    if distance > p[1]:  # 新距离小替换
+                        sorted_list[k] = p
+                except:
+                    sorted_list.append(p)
+        sorted_list.sort(key=lambda x: x[1])
+        while len(sorted_list) != 0:
+            ind = get_tup_index(sorted_list)  # 获取元祖的xy中的x顺序列
+            min_d_point = sorted_list[0]  # 取出可达距离最短点
+            del sorted_list[0]
+            if min_d_point not in result_list:  # 加入到结果队列
+                extend_set.add(min_d_point)
+                result_list.append(min_d_point)
+            if min_d_point in core_points:  # 是核心点进行拓展
+                point_friends = list(y_core[min_d_point])
+                for p in point_friends:
+                    if p not in result_list:  # 不在结果列队
+                        try:
+                            k = ind.index(p[0])
+                            distance = sorted_list[k][1]
+                            if distance > p[1]:  # 新距离小替换
+                                sorted_list[k] = p
+                        except:
+                            sorted_list.append(p)
+                sorted_list.sort(key=lambda x: x[1])
+
+    # 聚类
+    print(result_list)
+
+
+def Layer_by_OPTICS():
+    sample_sum = 1200
+    engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
+    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    cursor = connect.cursor()
+    sql = 'TRUNCATE TABLE unknown_data.small_test;'
+    cursor.execute(sql)
+    sql = 'select distinct score from unknown_data.data3 where `index`=21031002204810011321;'
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    data = []
+    for i in result:
+        if float(i[0]) == 0:
+            continue
+        data.append(float(i[0]))
+    OPTICS(data)
+
+
 if __name__ == '__main__':
-    Layer_by_DBSCAN()
+    Layer_by_OPTICS()
