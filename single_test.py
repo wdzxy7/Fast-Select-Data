@@ -137,6 +137,7 @@ def spilt_data_by_layer(layer, data_df):
     return_df = []
     temp_df = DataFrame()
     for lay in layer:
+        print(lay)
         for score in lay:
             specimen = data_df.loc[data_df['score'] == score, :]
             temp_df = temp_df.append(specimen, ignore_index=True)
@@ -160,6 +161,7 @@ def sampling_data(engine, df_list, data_sum, sample_sum):
         denominator = denominator + s
         molecular = sample_sum * w * std
         molecular_list.append(molecular)
+    s = 0
     for molecular, df in zip(molecular_list, df_list):
         specimen = molecular / denominator
         sam = float(specimen) / len(df)
@@ -168,7 +170,9 @@ def sampling_data(engine, df_list, data_sum, sample_sum):
             sam = 1
         df_sample = df.sample(frac=sam, replace=False, axis=0)
         print(df_sample)
+        s = s + df_sample.sum()
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
+    print(s)
 
 
 def layered_by_k_means():
@@ -374,13 +378,13 @@ def DBSCAN(data, Eps=0.002, MinPts=3):
 
 
 def Layer_by_DBSCAN():
-    sample_sum = 12
+    sample_sum = 1200
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.small_test;'
     cursor.execute(sql)
-    sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
+    sql = 'select distinct score from unknown_data.data3 where `index`=21031002204810011321;'
     cursor.execute(sql)
     result = cursor.fetchall()
     data = []
@@ -390,7 +394,7 @@ def Layer_by_DBSCAN():
         data.append(float(i[0]))
     print('DBSCAN START')
     layer = DBSCAN(data)
-    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    sql = 'select score from unknown_data.data3 where `index`=21031002204810011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
     df = DataFrame(sql_result, columns=['score']).astype('float')
