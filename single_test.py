@@ -474,7 +474,7 @@ def OPTICS(data, Eps=0.002, MinPts=3):
 
 
 def Layer_by_OPTICS():
-    sample_sum = 1200
+    sample_sum = 1269
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
