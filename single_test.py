@@ -409,6 +409,29 @@ def get_tup_index(lis):
     return ind
 
 
+def get_core_distance(core_points):
+    core_distance = {}
+    for key in core_points.keys():
+        t = sorted(core_points[key], key=lambda x: x[1])
+        core_distance[key] = t[2][1]
+    return core_distance
+
+
+def get_reach_distance(core_points, cdistance):
+    reach_distance = {}
+    distance_list = []
+    for key in core_points.keys():
+        cd = cdistance[key]
+        distance_list.clear()
+        for i in core_points[key]:
+            if cd > i[1]:
+                distance_list.append(cd)
+            else:
+                distance_list.append(i[1])
+        reach_distance[key] = max(distance_list)
+    return reach_distance
+
+
 def OPTICS(data, Eps=0.002, MinPts=3):
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
@@ -416,12 +439,14 @@ def OPTICS(data, Eps=0.002, MinPts=3):
         t_core = set()
         for score in data:  # 找出核心点在Eps邻域中的点
             if round(abs(core - score), 4) <= Eps:
-                tup = (score, (abs(core - score)))
+                tup = (score, round(abs(core - score), 3))
                 t_core.add(tup)
         if len(t_core) >= MinPts:  # 是核心点
             y_core[core] = t_core
         else:
             f_core.add(core)
+    core_distance = get_core_distance(y_core)
+    reach_distance = get_reach_distance(y_core, core_distance)
     core_points = y_core.keys()
     core_list = list(y_core.keys())  # 核心点集
     extend_set = set()  # 存放拓展了的点
@@ -444,7 +469,7 @@ def OPTICS(data, Eps=0.002, MinPts=3):
                 try:
                     k = ind.index(p[0])
                     distance = sorted_list[k][1]
-                    if distance > p[1]:  # 新距离小替换
+                    if distance < p[1]:  # 新距离大替换
                         sorted_list[k] = p
                 except:
                     sorted_list.append(p)
@@ -463,14 +488,15 @@ def OPTICS(data, Eps=0.002, MinPts=3):
                         try:
                             k = ind.index(p[0])
                             distance = sorted_list[k][1]
-                            if distance > p[1]:  # 新距离小替换
+                            if distance < p[1]:  # 新距离大替换
                                 sorted_list[k] = p
                         except:
                             sorted_list.append(p)
                 sorted_list.sort(key=lambda x: x[1])
 
     # 聚类
-    print(result_list)
+    for i in result_list:
+        print(i)
 
 
 def Layer_by_OPTICS():
