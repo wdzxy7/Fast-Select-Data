@@ -428,8 +428,21 @@ def get_reach_distance(core_points, cdistance):
                 distance_list.append(cd)
             else:
                 distance_list.append(i[1])
-        reach_distance[key] = max(distance_list)
+        reach_distance[key] = min(distance_list)
     return reach_distance
+
+
+def insert_point(result_list, sorted_list, point_friends, core_d, list_ind):
+    for p in point_friends:
+        if p not in result_list:
+            reach_distance = max(core_d, p[1])
+            try:
+                k = list_ind.index(p[0])
+                distance = sorted_list[k][1]
+                if distance > reach_distance:  # 新距离小替换
+                    sorted_list[k] = (p[0], reach_distance)
+            except:
+                sorted_list.append((p[0], reach_distance))
 
 
 def OPTICS(data, Eps=0.002, MinPts=3):
@@ -446,7 +459,6 @@ def OPTICS(data, Eps=0.002, MinPts=3):
         else:
             f_core.add(core)
     core_distance = get_core_distance(y_core)
-    reach_distance = get_reach_distance(y_core, core_distance)
     core_points = y_core.keys()
     core_list = list(y_core.keys())  # 核心点集
     extend_set = set()  # 存放拓展了的点
@@ -460,19 +472,12 @@ def OPTICS(data, Eps=0.002, MinPts=3):
             result_list.append(point)
         else:
             continue
-        point_friends = list(y_core[point])
+        point_friends = list(y_core[point])  # 取出直接密度可达点
         ind = get_tup_index(sorted_list)
-        if len(ind) == 0:  # 有序队列为空 直接加入
+        if len(ind) == 0:  # 有序队列为空直接加入
             sorted_list = sorted_list + point_friends
         else:  # 不为空可能替换
-            for p in point_friends:
-                try:
-                    k = ind.index(p[0])
-                    distance = sorted_list[k][1]
-                    if distance < p[1]:  # 新距离大替换
-                        sorted_list[k] = p
-                except:
-                    sorted_list.append(p)
+            insert_point(result_list, sorted_list, point_friends, core_distance[point], ind)
         sorted_list.sort(key=lambda x: x[1])
         while len(sorted_list) != 0:
             ind = get_tup_index(sorted_list)  # 获取元祖的xy中的x顺序列
@@ -483,15 +488,7 @@ def OPTICS(data, Eps=0.002, MinPts=3):
                 result_list.append(min_d_point)
             if min_d_point in core_points:  # 是核心点进行拓展
                 point_friends = list(y_core[min_d_point])
-                for p in point_friends:
-                    if p not in result_list:  # 不在结果列队
-                        try:
-                            k = ind.index(p[0])
-                            distance = sorted_list[k][1]
-                            if distance < p[1]:  # 新距离大替换
-                                sorted_list[k] = p
-                        except:
-                            sorted_list.append(p)
+                insert_point(result_list, sorted_list, point_friends, core_distance[point], ind)
                 sorted_list.sort(key=lambda x: x[1])
 
     # 聚类
