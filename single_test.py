@@ -434,7 +434,7 @@ def get_reach_distance(core_points, cdistance):
 
 def insert_point(result_list, sorted_list, point_friends, core_d, list_ind):
     for p in point_friends:
-        if p not in result_list:
+        if p[0] not in result_list:
             reach_distance = max(core_d, p[1])
             try:
                 k = list_ind.index(p[0])
@@ -452,7 +452,7 @@ def OPTICS(data, Eps=0.002, MinPts=3):
     for core in data:  # 遍历所有找出核心点
         t_core = set()
         for score in data:  # 找出核心点在Eps邻域中的点
-            if round(abs(core - score), 4) <= Eps:
+            if round(abs(core - score), 4) <= Eps and abs(core - score) != 0:
                 tup = (score, round(abs(core - score), 3))
                 t_core.add(tup)
         if len(t_core) >= MinPts:  # 是核心点
@@ -476,10 +476,7 @@ def OPTICS(data, Eps=0.002, MinPts=3):
             continue
         point_friends = list(y_core[point])  # 取出直接密度可达点
         ind = get_tup_index(sorted_list)
-        if len(ind) == 0:  # 有序队列为空直接加入
-            sorted_list = sorted_list + point_friends
-        else:  # 不为空可能替换
-            insert_point(result_list, sorted_list, point_friends, core_distance[point], ind)
+        insert_point(result_list, sorted_list, point_friends, core_distance[point], ind)
         sorted_list.sort(key=lambda x: x[1])
         while len(sorted_list) != 0:
             ind = get_tup_index(sorted_list)  # 获取元祖的xy中的x顺序列
@@ -493,9 +490,8 @@ def OPTICS(data, Eps=0.002, MinPts=3):
                 point_friends = list(y_core[min_d_point])
                 insert_point(result_list, sorted_list, point_friends, core_distance[point], ind)
                 sorted_list.sort(key=lambda x: x[1])
+            print(result_list)
     # 聚类
-    for i in result_list:
-        print(i)
 
 
 def Layer_by_OPTICS():
