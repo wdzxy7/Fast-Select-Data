@@ -448,6 +448,7 @@ def insert_point(result_list, sorted_list, point_friends, core_d, list_ind):
 def OPTICS(data, Eps=0.002, MinPts=3):
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
+    reach_distance = {}
     for core in data:  # 遍历所有找出核心点
         t_core = set()
         for score in data:  # 找出核心点在Eps邻域中的点
@@ -470,6 +471,7 @@ def OPTICS(data, Eps=0.002, MinPts=3):
             del core_list[0]
             extend_set.add(point)
             result_list.append(point)
+            reach_distance[point] = core_distance[point]
         else:
             continue
         point_friends = list(y_core[point])  # 取出直接密度可达点
@@ -485,12 +487,12 @@ def OPTICS(data, Eps=0.002, MinPts=3):
             del sorted_list[0]
             if min_d_point not in result_list:  # 加入到结果队列
                 extend_set.add(min_d_point)
-                result_list.append(min_d_point)
+                result_list.append(min_d_point[0])
+                reach_distance[min_d_point[0]] = min_d_point[1]
             if min_d_point in core_points:  # 是核心点进行拓展
                 point_friends = list(y_core[min_d_point])
                 insert_point(result_list, sorted_list, point_friends, core_distance[point], ind)
                 sorted_list.sort(key=lambda x: x[1])
-
     # 聚类
     for i in result_list:
         print(i)
