@@ -432,17 +432,42 @@ def get_reach_distance(core_points, cdistance):
     return reach_distance
 
 
-def insert_point(result_list, sorted_list, point_friends, core_d, list_ind):
+def insert_point(result_list, sorted_list, point_friends, core_d, list_ind, reach_distance):
     for p in point_friends:
         if p[0] not in result_list:
-            reach_distance = max(core_d, p[1])
+            rd = max(core_d, p[1])
+            # 修改可达距离
+            try:
+                pre_rd = reach_distance[p[0]]
+                if rd < pre_rd:
+                    reach_distance[p[0]] = rd
+            except:
+                reach_distance[p[0]] = rd
+            # 插入队列操作
             try:
                 k = list_ind.index(p[0])
                 distance = sorted_list[k][1]
-                if distance > reach_distance:  # 新距离小替换
-                    sorted_list[k] = (p[0], reach_distance)
+                if distance > rd:  # 新距离小替换
+                    sorted_list[k] = (p[0], rd)
             except:
-                sorted_list.append((p[0], reach_distance))
+                sorted_list.append((p[0], rd))
+
+
+def OPTICS_Cluster(result, reach_distance, core_distance, Eps):
+    layer = []
+    t_list = []
+    for point in result:
+        rd = reach_distance[point]
+        cd = core_distance[point]
+        if rd <= Eps:
+            t_list.append(point)
+        else:
+            if cd <= Eps:
+                l = t_list.copy()
+                layer.append(l)
+                t_list.clear()
+                t_list.append(point)
+    return layer
 
 
 def OPTICS(data, Eps=0.002, MinPts=3):
@@ -462,36 +487,47 @@ def OPTICS(data, Eps=0.002, MinPts=3):
     core_distance = get_core_distance(y_core)
     core_points = y_core.keys()
     core_list = list(y_core.keys())  # 核心点集
+    point_list = core_list + list(f_core)
+    for p in point_list:
+        reach_distance[p] = 99999
+        try:
+            core_distance[p]
+        except:
+            core_distance[p] = 0
     extend_set = set()  # 存放拓展了的点
     result_list = []  # 结果队列
     sorted_list = []  # 有序队列
-    while len(core_list) != 0:
-        point = core_list[0]
+    while len(point_list) != 0:
+        point = point_list[0]
         if point not in extend_set:
-            del core_list[0]
+            del point_list[0]
             extend_set.add(point)
             result_list.append(point)
-            reach_distance[point] = core_distance[point]
         else:
+            continue
+        if point not in core_list:
             continue
         point_friends = list(y_core[point])  # 取出直接密度可达点
         ind = get_tup_index(sorted_list)
-        insert_point(result_list, sorted_list, point_friends, core_distance[point], ind)
+        insert_point(result_list, sorted_list, point_friends, core_distance[point], ind, reach_distance)
         sorted_list.sort(key=lambda x: x[1])
         while len(sorted_list) != 0:
             ind = get_tup_index(sorted_list)  # 获取元祖的xy中的x顺序列
             min_d_point = sorted_list[0]  # 取出可达距离最短点
             del sorted_list[0]
-            if min_d_point not in result_list:  # 加入到结果队列
-                extend_set.add(min_d_point)
+            if min_d_point[0] not in result_list:  # 加入到结果队列
+                k = point_list.index(min_d_point[0])
+                del point_list[k]
+                extend_set.add(min_d_point[0])
                 result_list.append(min_d_point[0])
-                reach_distance[min_d_point[0]] = min_d_point[1]
-            if min_d_point in core_points:  # 是核心点进行拓展
-                point_friends = list(y_core[min_d_point])
-                insert_point(result_list, sorted_list, point_friends, core_distance[point], ind)
+            if min_d_point[0] in core_points:  # 是核心点进行拓展
+                point_friends = list(y_core[min_d_point[0]])
+                insert_point(result_list, sorted_list, point_friends, core_distance[point], ind, reach_distance)
                 sorted_list.sort(key=lambda x: x[1])
-            print(result_list)
     # 聚类
+    layer = OPTICS_Cluster(result_list, reach_distance, core_distance, Eps)
+    for l in layer:
+        print(l)
 
 
 def Layer_by_OPTICS():
@@ -501,7 +537,7 @@ def Layer_by_OPTICS():
     cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.small_test;'
     cursor.execute(sql)
-    sql = 'select distinct score from unknown_data.data3 where `index`=21031002204810011321;'
+    sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     result = cursor.fetchall()
     data = []
