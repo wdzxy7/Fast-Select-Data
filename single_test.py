@@ -557,11 +557,17 @@ def Layer_by_OPTICS():
         if float(i[0]) == 0:
             continue
         data.append(float(i[0]))
-    OPTICS(data)
+    layer = OPTICS(data)
+    for i in layer:
+        t = i.copy()
+        t.sort()
+        print(t)
     layer = DBSCAN(data)
     print('----------------------------------')
     for i in layer:
-        print(i)
+        t = list(i).copy()
+        t.sort()
+        print(t)
 
 
 if __name__ == '__main__':
