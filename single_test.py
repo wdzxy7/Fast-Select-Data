@@ -338,7 +338,7 @@ def without_z_layer():
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
 
 
-def DBSCAN(data, Eps=0.002, MinPts=3):
+def DBSCAN(data, Eps=0.003, MinPts=4):
     class_list = []
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
@@ -483,7 +483,7 @@ def OPTICS_Cluster(result, reach_distance, core_distance, Eps):
     return layer
 
 
-def OPTICS(data, Eps=0.002, MinPts=3):
+def OPTICS(data, Eps=0.003, MinPts=4):
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
     reach_distance = {}
