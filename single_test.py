@@ -345,7 +345,7 @@ def DBSCAN(data, Eps=0.002, MinPts=3):
     for core in data:  # 遍历所有找出核心点
         t_core = set()
         for score in data:  # 找出核心点在Eps邻域中的点
-            if round(abs(core - score), 4) <= Eps:
+            if round(abs(core - score), 4) <= Eps and abs(core - score) != 0:
                 t_core.add(score)
         if len(t_core) >= MinPts:  # 是核心点
             y_core[core] = t_core
@@ -459,6 +459,15 @@ def OPTICS_Cluster(result, reach_distance, core_distance, Eps):
     for point in result:
         rd = reach_distance[point]
         cd = core_distance[point]
+        if rd > Eps or rd == 999:
+            if cd != -999 and cd <= Eps:
+                t = t_list.copy()
+                layer.append(t)
+                t_list.clear()
+                t_list.append(point)
+        else:
+            t_list.append(point)
+        '''
         if rd <= Eps:
             t_list.append(point)
         else:
@@ -467,6 +476,10 @@ def OPTICS_Cluster(result, reach_distance, core_distance, Eps):
                 layer.append(l)
                 t_list.clear()
                 t_list.append(point)
+        '''
+    t = t_list.copy()
+    layer.append(t)
+    del layer[0]
     return layer
 
 
@@ -489,11 +502,11 @@ def OPTICS(data, Eps=0.002, MinPts=3):
     core_list = list(y_core.keys())  # 核心点集
     point_list = core_list + list(f_core)
     for p in point_list:
-        reach_distance[p] = 99999
+        reach_distance[p] = 999
         try:
             core_distance[p]
         except:
-            core_distance[p] = 0
+            core_distance[p] = -999
     extend_set = set()  # 存放拓展了的点
     result_list = []  # 结果队列
     sorted_list = []  # 有序队列
@@ -526,8 +539,7 @@ def OPTICS(data, Eps=0.002, MinPts=3):
                 sorted_list.sort(key=lambda x: x[1])
     # 聚类
     layer = OPTICS_Cluster(result_list, reach_distance, core_distance, Eps)
-    for l in layer:
-        print(l)
+    return layer
 
 
 def Layer_by_OPTICS():
@@ -546,6 +558,10 @@ def Layer_by_OPTICS():
             continue
         data.append(float(i[0]))
     OPTICS(data)
+    layer = DBSCAN(data)
+    print('----------------------------------')
+    for i in layer:
+        print(i)
 
 
 if __name__ == '__main__':
