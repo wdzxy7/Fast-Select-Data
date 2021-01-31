@@ -4,6 +4,7 @@ from pandas import DataFrame
 import time
 from sqlalchemy import create_engine
 import random
+from openpyxl import Workbook
 
 
 def spilt_by_score():
@@ -167,13 +168,13 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
     s = 0
     for molecular, df in zip(molecular_list, df_list):
         specimen = molecular / denominator
-        print(molecular, denominator, specimen)
+        # print(molecular, denominator, specimen)
         sam = float(specimen) / len(df)
-        print(sam)
+        # print(sam)
         if sam > 1:
             sam = 1
         df_sample = df.sample(frac=sam, replace=False, axis=0)
-        print(len(df_sample))
+        # print(len(df_sample))
         s = s + df_sample.sum()
         lest = lest - len(df_sample)
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
@@ -387,6 +388,7 @@ def DBSCAN(data, Eps=0.003, MinPts=4):
 
 
 def Layer_by_DBSCAN(sample_sum):
+    print('DBSCAN START')
     database = 'dbscan_result'
     # sample_sum = 788
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
@@ -402,7 +404,6 @@ def Layer_by_DBSCAN(sample_sum):
         if float(i[0]) == 0:
             continue
         data.append(float(i[0]))
-    print('DBSCAN START')
     layer = DBSCAN(data)
     sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
@@ -554,6 +555,7 @@ def OPTICS(data, Eps=0.003, MinPts=4):
 
 
 def Layer_by_OPTICS(sample_sum):
+    print('OPTICS START')
     # sample_sum = 788
     database = 'optics_result'
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
@@ -580,19 +582,20 @@ def Layer_by_OPTICS(sample_sum):
 
 
 def sample_by_rate(engine, df_list, data_sum, sample_sum, zero_data):
-    print(len(zero_data), data_sum, sample_sum)
+    # print(len(zero_data), data_sum, sample_sum)
     for df in df_list:
         specimen = len(df) / data_sum * sample_sum / len(df)
-        print(specimen)
+        # print(specimen)
         df_sample = df.sample(frac=specimen, replace=False, axis=0)
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
     sam = len(zero_data) / data_sum * sample_sum / len(zero_data)
-    print(sam)
+    # print(sam)
     df_sample = zero_data.sample(frac=sam, replace=False, axis=0)
     df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
 
 
 def sample_by_layer_rate(sample_sum):
+    print('RATE_Layer START')
     # sample_sum = 788
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
@@ -618,7 +621,38 @@ def sample_by_layer_rate(sample_sum):
 
 
 if __name__ == '__main__':
-    for sample_s in range(778, 7880, 778):
+    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    cursor = connect.cursor()
+    wb = Workbook()
+    excel = wb.active
+    excel['A1'] = 'data_sum'
+    excel['B1'] = 'stand'
+    excel['C1'] = 'DBSCAN'
+    excel['D1'] = 'OPTICS'
+    excel['E1'] = 'RATE_Layer'
+    count = 2
+    datas = 100
+    for sample_s in range(778, 1600, 778):
+        excel['A' + str(count)] = str(datas) + 'W'
+        excel['B' + str(count)] = 0.000389
         Layer_by_OPTICS(sample_s)
+        sql = 'SELECT AVG(score) FROM unknown_data.optics_result;'
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        res = result[0][0]
+        excel['D' + str(count)] = round(float(res), 6)
         Layer_by_DBSCAN(sample_s)
+        sql = 'SELECT AVG(score) FROM unknown_data.dbscan_result;'
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        res = result[0][0]
+        excel['C' + str(count)] = round(float(res), 6)
         sample_by_layer_rate(sample_s)
+        sql = 'SELECT AVG(score) FROM unknown_data.small_test;'
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        res = result[0][0]
+        excel['E' + str(count)] = round(float(res), 6)
+        datas = datas + 50
+        count = count + 1
+    wb.save('layer_test.xlsx')
