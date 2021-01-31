@@ -178,6 +178,7 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data):
         lest = lest - len(df_sample)
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
     df_sample = zero_data.sample(frac=lest / len(zero_data), replace=False, axis=0)
+    print(len(df_sample))
     df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
     print(s)
 
