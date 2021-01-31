@@ -149,7 +149,7 @@ def spilt_data_by_layer(layer, data_df):
     return return_df, zero_data
 
 
-def sampling_data(engine, df_list, data_sum, sample_sum, zero_data):
+def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
     f_z_sample_sum = sample_sum * (len(zero_data) / data_sum)
     denominator = 0
     lest = sample_sum
@@ -176,15 +176,15 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data):
         print(len(df_sample))
         s = s + df_sample.sum()
         lest = lest - len(df_sample)
-        df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
-    df_sample = zero_data.sample(frac=lest / len(zero_data), replace=False, axis=0)
-    print(len(df_sample))
-    df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
-    print(s)
+        df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
+    sam = lest / len(zero_data)
+    df_sample = zero_data.sample(frac=sam, replace=False, axis=0)
+    df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
 
 
 def layered_by_k_means():
     sample_sum = 788
+    database = 'dbscan_result'
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
@@ -205,12 +205,13 @@ def layered_by_k_means():
     data_sum = len(sql_result)
     # 取出每层的数据
     df_list, zero_data = spilt_data_by_layer(layer, df)
-    sampling_data(engine, df_list, data_sum, sample_sum, zero_data)
+    sampling_data(engine, df_list, data_sum, sample_sum, zero_data,database)
 
 
 # 分为0，非0两层
 def two_layer():
     sample_sum = 788
+    database = 'dbscan_result'
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
@@ -238,7 +239,7 @@ def two_layer():
     fz_df.columns = ['score']
     df_list = [z_df, fz_df]
     zero_data = DataFrame()
-    sampling_data(engine, df_list, data_sum, sample_sum, zero_data)
+    sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database)
 
 
 # 从非0数据项直接抽取
@@ -385,12 +386,13 @@ def DBSCAN(data, Eps=0.003, MinPts=4):
     return class_list
 
 
-def Layer_by_DBSCAN():
-    sample_sum = 2338
+def Layer_by_DBSCAN(sample_sum):
+    database = 'dbscan_result'
+    # sample_sum = 788
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
-    sql = 'TRUNCATE TABLE unknown_data.small_test;'
+    sql = 'TRUNCATE TABLE unknown_data.dbscan_result;'
     cursor.execute(sql)
     sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
@@ -408,7 +410,7 @@ def Layer_by_DBSCAN():
     df = DataFrame(sql_result, columns=['score']).astype('float')
     df_list, zero_data = spilt_data_by_layer(layer, df)
     data_sum = len(sql_result)
-    sampling_data(engine, df_list, data_sum, sample_sum, zero_data)
+    sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database)
 
 
 def get_tup_index(lis):
@@ -551,8 +553,47 @@ def OPTICS(data, Eps=0.003, MinPts=4):
     return layer
 
 
-def Layer_by_OPTICS():
-    sample_sum = 70
+def Layer_by_OPTICS(sample_sum):
+    # sample_sum = 788
+    database = 'optics_result'
+    engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
+    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    cursor = connect.cursor()
+    sql = 'TRUNCATE TABLE unknown_data.optics_result;'
+    cursor.execute(sql)
+    sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    data = []
+    for i in result:
+        if float(i[0]) == 0:
+            continue
+        data.append(float(i[0]))
+    layer = OPTICS(data)
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    cursor.execute(sql)
+    sql_result = cursor.fetchall()
+    df = DataFrame(sql_result, columns=['score']).astype('float')
+    df_list, zero_data = spilt_data_by_layer(layer, df)
+    data_sum = len(sql_result)
+    sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database)
+
+
+def sample_by_rate(engine, df_list, data_sum, sample_sum, zero_data):
+    print(len(zero_data), data_sum, sample_sum)
+    for df in df_list:
+        specimen = len(df) / data_sum * sample_sum / len(df)
+        print(specimen)
+        df_sample = df.sample(frac=specimen, replace=False, axis=0)
+        df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
+    sam = len(zero_data) / data_sum * sample_sum / len(zero_data)
+    print(sam)
+    df_sample = zero_data.sample(frac=sam, replace=False, axis=0)
+    df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
+
+
+def sample_by_layer_rate(sample_sum):
+    # sample_sum = 788
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
@@ -567,17 +608,17 @@ def Layer_by_OPTICS():
             continue
         data.append(float(i[0]))
     layer = OPTICS(data)
-    for i in layer:
-        t = i.copy()
-        t.sort()
-        print(t)
-    layer = DBSCAN(data)
-    print('----------------------------------')
-    for i in layer:
-        t = list(i).copy()
-        t.sort()
-        print(t)
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    cursor.execute(sql)
+    sql_result = cursor.fetchall()
+    df = DataFrame(sql_result, columns=['score']).astype('float')
+    df_list, zero_data = spilt_data_by_layer(layer, df)
+    data_sum = len(sql_result)
+    sample_by_rate(engine, df_list, data_sum, sample_sum, zero_data)
 
 
 if __name__ == '__main__':
-    Layer_by_DBSCAN()
+    for sample_s in range(778, 7880, 778):
+        Layer_by_OPTICS(sample_s)
+        Layer_by_DBSCAN(sample_s)
+        sample_by_layer_rate(sample_s)
