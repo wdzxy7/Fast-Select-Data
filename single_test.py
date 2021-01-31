@@ -145,11 +145,14 @@ def spilt_data_by_layer(layer, data_df):
         return_df.append(t_df)
         temp_df.drop(temp_df.index, inplace=True)
         temp_df.columns = ['score']
-    return return_df
+    zero_data = data_df.loc[data_df['score'] == 0, :]
+    return return_df, zero_data
 
 
-def sampling_data(engine, df_list, data_sum, sample_sum):
+def sampling_data(engine, df_list, data_sum, sample_sum, zero_data):
+    f_z_sample_sum = sample_sum * (len(zero_data) / data_sum)
     denominator = 0
+    lest = sample_sum
     molecular_list = []
     for df in df_list:
         w = len(df) / data_sum
@@ -159,19 +162,23 @@ def sampling_data(engine, df_list, data_sum, sample_sum):
         if s < 0.0000000000000001:
             s = 0
         denominator = denominator + s
-        molecular = sample_sum * w * std
+        molecular = data_sum * w * std
         molecular_list.append(molecular)
     s = 0
     for molecular, df in zip(molecular_list, df_list):
         specimen = molecular / denominator
+        print(molecular, denominator, specimen)
         sam = float(specimen) / len(df)
         print(sam)
         if sam > 1:
             sam = 1
         df_sample = df.sample(frac=sam, replace=False, axis=0)
-        print(df_sample)
+        print(len(df_sample))
         s = s + df_sample.sum()
+        lest = lest - len(df_sample)
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
+    df_sample = zero_data.sample(frac=lest / len(zero_data), replace=False, axis=0)
+    df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
     print(s)
 
 
@@ -196,8 +203,8 @@ def layered_by_k_means():
     df = DataFrame(sql_result, columns=['score']).astype('float')
     data_sum = len(sql_result)
     # 取出每层的数据
-    df_list = spilt_data_by_layer(layer, df)
-    sampling_data(engine, df_list, data_sum, sample_sum)
+    df_list, zero_data = spilt_data_by_layer(layer, df)
+    sampling_data(engine, df_list, data_sum, sample_sum, zero_data)
 
 
 # 分为0，非0两层
@@ -229,7 +236,8 @@ def two_layer():
         fz_df = fz_df.append(specimen, ignore_index=True)
     fz_df.columns = ['score']
     df_list = [z_df, fz_df]
-    sampling_data(engine, df_list, data_sum, sample_sum)
+    zero_data = DataFrame()
+    sampling_data(engine, df_list, data_sum, sample_sum, zero_data)
 
 
 # 从非0数据项直接抽取
@@ -377,13 +385,13 @@ def DBSCAN(data, Eps=0.003, MinPts=4):
 
 
 def Layer_by_DBSCAN():
-    sample_sum = 1200
+    sample_sum = 2338
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.small_test;'
     cursor.execute(sql)
-    sql = 'select distinct score from unknown_data.data3 where `index`=21031002204810011321;'
+    sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     result = cursor.fetchall()
     data = []
@@ -393,13 +401,13 @@ def Layer_by_DBSCAN():
         data.append(float(i[0]))
     print('DBSCAN START')
     layer = DBSCAN(data)
-    sql = 'select score from unknown_data.data3 where `index`=21031002204810011321;'
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
     df = DataFrame(sql_result, columns=['score']).astype('float')
-    df_list = spilt_data_by_layer(layer, df)
+    df_list, zero_data = spilt_data_by_layer(layer, df)
     data_sum = len(sql_result)
-    sampling_data(engine, df_list, data_sum, sample_sum)
+    sampling_data(engine, df_list, data_sum, sample_sum, zero_data)
 
 
 def get_tup_index(lis):
@@ -543,7 +551,7 @@ def OPTICS(data, Eps=0.003, MinPts=4):
 
 
 def Layer_by_OPTICS():
-    sample_sum = 1269
+    sample_sum = 70
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
@@ -571,4 +579,4 @@ def Layer_by_OPTICS():
 
 
 if __name__ == '__main__':
-    Layer_by_OPTICS()
+    Layer_by_DBSCAN()

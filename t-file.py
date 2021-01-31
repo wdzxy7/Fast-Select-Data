@@ -1,5 +1,6 @@
 from pandas import DataFrame
 import math
-point = [5,2,3,4,5,6]
-point.sort()
+point = 2
+t = point
+t = t -1
 print(point)
