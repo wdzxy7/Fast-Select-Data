@@ -561,11 +561,11 @@ def Layer_by_OPTICS(sample_sum):
     # sample_sum = 788
     database = 'optics_result'
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
-    # connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
-    # cursor = connect.cursor()
+    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.optics_result;'
     cursor.execute(sql)
-    sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
+    sql = 'select distinct score from unknown_data.data3 where `index`=23021001102910011321;'
     cursor.execute(sql)
     result = cursor.fetchall()
     data = []
@@ -574,7 +574,9 @@ def Layer_by_OPTICS(sample_sum):
             continue
         data.append(float(i[0]))
     layer = OPTICS(data)
-    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    for i in layer:
+        print(i)
+    sql = 'select score from unknown_data.data3 where `index`=23021001102910011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
     df = DataFrame(sql_result, columns=['score']).astype('float')
