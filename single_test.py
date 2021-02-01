@@ -179,6 +179,8 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
         lest = lest - len(df_sample)
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
     sam = lest / len(zero_data)
+    if sam > 1:
+        sam = 1
     df_sample = zero_data.sample(frac=sam, replace=False, axis=0)
     df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
 
@@ -392,8 +394,8 @@ def Layer_by_DBSCAN(sample_sum):
     database = 'dbscan_result'
     # sample_sum = 788
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
-    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
-    cursor = connect.cursor()
+    # connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    # cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.dbscan_result;'
     cursor.execute(sql)
     sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
@@ -559,8 +561,8 @@ def Layer_by_OPTICS(sample_sum):
     # sample_sum = 788
     database = 'optics_result'
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
-    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
-    cursor = connect.cursor()
+    # connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    # cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.optics_result;'
     cursor.execute(sql)
     sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
@@ -598,8 +600,8 @@ def sample_by_layer_rate(sample_sum):
     print('RATE_Layer START')
     # sample_sum = 788
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
-    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
-    cursor = connect.cursor()
+    # connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    # cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.small_test;'
     cursor.execute(sql)
     sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
@@ -631,8 +633,9 @@ if __name__ == '__main__':
     excel['D1'] = 'OPTICS'
     excel['E1'] = 'RATE_Layer'
     count = 2
-    datas = 100
-    for sample_s in range(778, 1600, 778):
+    datas = 1200
+    for sample_s in range(18672, 28000, 778):
+        print(sample_s)
         excel['A' + str(count)] = str(datas) + 'W'
         excel['B' + str(count)] = 0.000389
         Layer_by_OPTICS(sample_s)
@@ -655,4 +658,4 @@ if __name__ == '__main__':
         excel['E' + str(count)] = round(float(res), 6)
         datas = datas + 50
         count = count + 1
-    wb.save('layer_test.xlsx')
+    wb.save('layer_test2.xlsx')
