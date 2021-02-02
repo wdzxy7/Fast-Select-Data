@@ -356,12 +356,12 @@ def DBSCAN(data, Eps=0.003, MinPts=4):
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
     for core in data:  # 遍历所有找出核心点
-        t_core = set()
+        t_core = []
         for score in data:  # 找出核心点在Eps邻域中的点
             if round(abs(core - score), 4) <= Eps and abs(core - score) != 0:
-                t_core.add(score)
+                t_core.append(score)
         if len(t_core) >= MinPts:  # 是核心点
-            y_core[core] = t_core
+            y_core[core] = set(t_core)
         else:
             f_core.add(core)
     ct_cores = y_core.keys()  # 核心点集
@@ -389,13 +389,13 @@ def DBSCAN(data, Eps=0.003, MinPts=4):
     return class_list
 
 
-def Layer_by_DBSCAN(sample_sum):
+def Layer_by_DBSCAN():
     print('DBSCAN START')
     database = 'dbscan_result'
-    # sample_sum = 788
+    sample_sum = 788
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
-    # connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
-    # cursor = connect.cursor()
+    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.dbscan_result;'
     cursor.execute(sql)
     sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
@@ -502,13 +502,13 @@ def OPTICS(data, Eps=0.003, MinPts=4):
     y_core = {}  # 存放是核心点
     reach_distance = {}
     for core in data:  # 遍历所有找出核心点
-        t_core = set()
+        t_core = []
         for score in data:  # 找出核心点在Eps邻域中的点
             if round(abs(core - score), 4) <= Eps and abs(core - score) != 0:
                 tup = (score, round(abs(core - score), 3))
-                t_core.add(tup)
+                t_core.append(tup)
         if len(t_core) >= MinPts:  # 是核心点
-            y_core[core] = t_core
+            y_core[core] = set(t_core)
         else:
             f_core.add(core)
     core_distance = get_core_distance(y_core)
@@ -556,9 +556,9 @@ def OPTICS(data, Eps=0.003, MinPts=4):
     return layer
 
 
-def Layer_by_OPTICS(sample_sum):
+def Layer_by_OPTICS():
     print('OPTICS START')
-    # sample_sum = 788
+    sample_sum = 788
     database = 'optics_result'
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
@@ -598,12 +598,12 @@ def sample_by_rate(engine, df_list, data_sum, sample_sum, zero_data):
     df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
 
 
-def sample_by_layer_rate(sample_sum):
+def sample_by_layer_rate():
     print('RATE_Layer START')
-    # sample_sum = 788
+    sample_sum = 788
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
-    # connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
-    # cursor = connect.cursor()
+    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.small_test;'
     cursor.execute(sql)
     sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
@@ -624,7 +624,7 @@ def sample_by_layer_rate(sample_sum):
     sample_by_rate(engine, df_list, data_sum, sample_sum, zero_data)
 
 
-if __name__ == '__main__':
+def test():
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
     wb = Workbook()

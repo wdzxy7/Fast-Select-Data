@@ -1,7 +1,6 @@
-import hashlib
-import pylab as pl
+import single_test as st
 import pymysql
-import numpy as np
+
 
 if __name__ == '__main__':
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
@@ -11,11 +10,6 @@ if __name__ == '__main__':
     res = cursor.fetchall()
     data = []
     for i in res:
-        data.append(i[0])
-    data = np.array(data)
-    print(data)
-    print('-------------------------------------------------------------')
-    print(np.sort(data))
-    pl.hist(data, 100)
-    pl.title('exponential_data')
-    pl.show()
+        data.append(float(i[0]))
+    layer = st.DBSCAN(data, Eps=0.2, MinPts=5)
+    print(layer)
