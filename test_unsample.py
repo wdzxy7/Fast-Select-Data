@@ -79,7 +79,7 @@ def test2():
     res_dict = {}
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
-    sql = 'select distinct `index` from unknown_data.data3;'
+    sql = 'select distinct `index` from unknown_data.test_sample2;'
     cursor.execute(sql)
     res = cursor.fetchall()
     indexs = []
@@ -89,16 +89,17 @@ def test2():
     for ind in indexs:
         print(c)
         c += 1
-        sql = 'select `index`, avg(score) from unknown_data.data3 group by `index`;'
+        sql = 'select avg(score) from unknown_data.data3 where `index`=' + str(ind) + ';'
         cursor.execute(sql)
         res = cursor.fetchall()
-        stand = res[0]
-        sql = 'select `index`, avg(score) from unknown_data.test_sample2 group by `index`;'
+        stand = float(res[0][0])
+        sql = 'select avg(score) from unknown_data.test_sample2 where `index`=' + str(ind) + ';'
         cursor.execute(sql)
         res = cursor.fetchall()
-        sample = res[0]
+        sample = float(res[0][0])
         accuracy = round(abs(stand - sample) / abs(stand), 10) * 100
         res_dict[ind] = [stand, sample, accuracy]
+        time.sleep(0.1)
     res_dict = sorted(res_dict.items(), key=lambda x: x[1][2], reverse=True)
     accuracy_dict = {}
     for i in res_dict:
