@@ -138,7 +138,6 @@ def spilt_data_by_layer(layer, data_df):
     return_df = []
     temp_df = DataFrame()
     for lay in layer:
-        print(lay)
         for score in lay:
             specimen = data_df.loc[data_df['score'] == score, :]
             temp_df = temp_df.append(specimen, ignore_index=True)
@@ -181,6 +180,8 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
     sam = lest / len(zero_data)
     if sam > 1:
         sam = 1
+    elif sam < 1:
+        sam = 0
     df_sample = zero_data.sample(frac=sam, replace=False, axis=0)
     df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
 
@@ -351,15 +352,18 @@ def without_z_layer():
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
 
 
-def DBSCAN(data, Eps=0.003, MinPts=4):
+def DBSCAN(same_data, Eps=0.003, MinPts=4):
     class_list = []
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
+    data = same_data.keys()
     for core in data:  # 遍历所有找出核心点
         t_core = []
         for score in data:  # 找出核心点在Eps邻域中的点
+            same_point = same_data[score]  # 相同点数量
             if round(abs(core - score), 4) <= Eps and abs(core - score) != 0:
-                t_core.append(score)
+                for i in range(same_point):
+                    t_core.append(score)
         if len(t_core) >= MinPts:  # 是核心点
             y_core[core] = set(t_core)
         else:
@@ -398,6 +402,7 @@ def Layer_by_DBSCAN():
     cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.dbscan_result;'
     cursor.execute(sql)
+    '''
     sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     result = cursor.fetchall()
@@ -406,7 +411,16 @@ def Layer_by_DBSCAN():
         if float(i[0]) == 0:
             continue
         data.append(float(i[0]))
-    layer = DBSCAN(data)
+    '''
+    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
+    cursor.execute(sql)
+    res = cursor.fetchall()
+    same_data = {}
+    for i in res:
+        if float(i[0]) == 0:
+            continue
+        same_data[float(i[0])] = int(i[1])
+    layer = DBSCAN(same_data)
     sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
@@ -423,11 +437,11 @@ def get_tup_index(lis):
     return ind
 
 
-def get_core_distance(core_points):
+def get_core_distance(core_points, MinPts):
     core_distance = {}
     for key in core_points.keys():
         t = sorted(core_points[key], key=lambda x: x[1])
-        core_distance[key] = t[2][1]
+        core_distance[key] = t[MinPts - 1][1]  # 核心距离那个点
     return core_distance
 
 
@@ -497,21 +511,26 @@ def OPTICS_Cluster(result, reach_distance, core_distance, Eps):
     return layer
 
 
-def OPTICS(data, Eps=0.003, MinPts=4):
+def OPTICS(same_data, Eps=0.003, MinPts=4):
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
     reach_distance = {}
+    data = same_data.keys()
     for core in data:  # 遍历所有找出核心点
         t_core = []
         for score in data:  # 找出核心点在Eps邻域中的点
+            same_point = same_data[score]  # 有多少个相同点
             if round(abs(core - score), 4) <= Eps and abs(core - score) != 0:
                 tup = (score, round(abs(core - score), 3))
-                t_core.append(tup)
+                for i in range(same_point):
+                    t_core.append(tup)
         if len(t_core) >= MinPts:  # 是核心点
-            y_core[core] = set(t_core)
+            y_core[core] = t_core
         else:
             f_core.add(core)
-    core_distance = get_core_distance(y_core)
+    core_distance = get_core_distance(y_core, MinPts)
+    for key in y_core.keys():
+        y_core[key] = set(y_core[key])
     core_points = y_core.keys()
     core_list = list(y_core.keys())  # 核心点集
     point_list = core_list + list(f_core)
@@ -565,6 +584,7 @@ def Layer_by_OPTICS():
     cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.optics_result;'
     cursor.execute(sql)
+    '''
     sql = 'select distinct score from unknown_data.data3 where `index`=23021001102910011321;'
     cursor.execute(sql)
     result = cursor.fetchall()
@@ -573,7 +593,16 @@ def Layer_by_OPTICS():
         if float(i[0]) == 0:
             continue
         data.append(float(i[0]))
-    layer = OPTICS(data)
+    '''
+    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
+    cursor.execute(sql)
+    res = cursor.fetchall()
+    same_data = {}
+    for i in res:
+        if float(i[0]) == 0:
+            continue
+        same_data[float(i[0])] = int(i[1])
+    layer = OPTICS(same_data)
     for i in layer:
         print(i)
     sql = 'select score from unknown_data.data3 where `index`=23021001102910011321;'
@@ -606,15 +635,15 @@ def sample_by_layer_rate():
     cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.small_test;'
     cursor.execute(sql)
-    sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
+    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
     cursor.execute(sql)
-    result = cursor.fetchall()
-    data = []
-    for i in result:
+    res = cursor.fetchall()
+    same_data = {}
+    for i in res:
         if float(i[0]) == 0:
             continue
-        data.append(float(i[0]))
-    layer = OPTICS(data)
+        same_data[float(i[0])] = int(i[1])
+    layer = OPTICS(same_data)
     sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
@@ -661,3 +690,6 @@ def test():
         datas = datas + 50
         count = count + 1
     wb.save('layer_test2.xlsx')
+
+
+Layer_by_OPTICS()

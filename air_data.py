@@ -5,11 +5,11 @@ import pymysql
 if __name__ == '__main__':
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
-    sql = 'SELECT value FROM unknown_data.single_data WHERE parameter = \'pm1\';'
+    sql = 'select value, count(value) from unknown_data.single_data where parameter=\'pm10\' group by value;'
     cursor.execute(sql)
     res = cursor.fetchall()
-    data = []
+    same_data = {}
     for i in res:
-        data.append(float(i[0]))
-    layer = st.DBSCAN(data, Eps=0.2, MinPts=5)
+        same_data[float(i[0])] = int(i[1])
+    layer = st.DBSCAN(same_data, Eps=0.2, MinPts=10)
     print(layer)
