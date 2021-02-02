@@ -169,7 +169,7 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
         specimen = molecular / denominator
         # print(molecular, denominator, specimen)
         sam = float(specimen) / len(df)
-        # print(sam)
+        print(sam)
         if sam > 1:
             sam = 1
         df_sample = df.sample(frac=sam, replace=False, axis=0)
@@ -178,9 +178,10 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
         lest = lest - len(df_sample)
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
     sam = lest / len(zero_data)
+    print(sam)
     if sam > 1:
         sam = 1
-    elif sam < 1:
+    elif sam < 0:
         sam = 0
     df_sample = zero_data.sample(frac=sam, replace=False, axis=0)
     df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
@@ -605,7 +606,7 @@ def Layer_by_OPTICS():
     layer = OPTICS(same_data)
     for i in layer:
         print(i)
-    sql = 'select score from unknown_data.data3 where `index`=23021001102910011321;'
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
     df = DataFrame(sql_result, columns=['score']).astype('float')
@@ -690,6 +691,3 @@ def test():
         datas = datas + 50
         count = count + 1
     wb.save('layer_test2.xlsx')
-
-
-Layer_by_OPTICS()
