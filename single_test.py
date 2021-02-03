@@ -157,7 +157,7 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
     for df in df_list:
         w = len(df) / data_sum
         desc = df.describe()
-        std = float(desc.iloc[2])
+        std = round(float(desc.iloc[2]), 10)
         s = w * std
         if s < 0.0000000000000001:
             s = 0
@@ -189,7 +189,6 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
     except:
         pass
-
 
 
 def layered_by_k_means():
@@ -403,7 +402,7 @@ def DBSCAN(same_data, Eps=0.003, MinPts=4):
     return class_list
 
 
-def Layer_by_DBSCAN():
+def Cluster_by_DBSCAN():
     print('DBSCAN START')
     database = 'dbscan_result'
     sample_sum = 788
@@ -581,7 +580,7 @@ def OPTICS(same_data, Eps=0.003, MinPts=4):
     return layer
 
 
-def Layer_by_OPTICS():
+def Cluster_by_OPTICS():
     print('OPTICS START')
     sample_sum = 788
     database = 'optics_result'
@@ -590,16 +589,6 @@ def Layer_by_OPTICS():
     cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.optics_result;'
     cursor.execute(sql)
-    '''
-    sql = 'select distinct score from unknown_data.data3 where `index`=23021001102910011321;'
-    cursor.execute(sql)
-    result = cursor.fetchall()
-    data = []
-    for i in result:
-        if float(i[0]) == 0:
-            continue
-        data.append(float(i[0]))
-    '''
     sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
     cursor.execute(sql)
     res = cursor.fetchall()
@@ -675,13 +664,13 @@ def test():
         print(sample_s)
         excel['A' + str(count)] = str(datas) + 'W'
         excel['B' + str(count)] = 0.000389
-        Layer_by_OPTICS(sample_s)
+        Cluster_by_OPTICS(sample_s)
         sql = 'SELECT AVG(score) FROM unknown_data.optics_result;'
         cursor.execute(sql)
         result = cursor.fetchall()
         res = result[0][0]
         excel['D' + str(count)] = round(float(res), 6)
-        Layer_by_DBSCAN(sample_s)
+        Cluster_by_DBSCAN(sample_s)
         sql = 'SELECT AVG(score) FROM unknown_data.dbscan_result;'
         cursor.execute(sql)
         result = cursor.fetchall()
@@ -696,3 +685,6 @@ def test():
         datas = datas + 50
         count = count + 1
     wb.save('layer_test2.xlsx')
+
+
+Cluster_by_OPTICS()
