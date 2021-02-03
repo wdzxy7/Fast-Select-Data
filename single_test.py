@@ -358,23 +358,27 @@ def DBSCAN(same_data, Eps=0.003, MinPts=4):
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
     data = same_data.keys()
+    t_core = []
     for core in data:  # 遍历所有找出核心点
-        t_core = []
+        t_core.clear()
         for score in data:  # 找出核心点在Eps邻域中的点
             same_point = same_data[score]  # 相同点数量
             if round(abs(core - score), 4) <= Eps and abs(core - score) != 0:
                 for i in range(same_point):
                     t_core.append(score)
         if len(t_core) >= MinPts:  # 是核心点
-            y_core[core] = set(t_core)
+            t_core.append(core)
+            s = t_core.copy()
+            y_core[core] = set(s)
         else:
             f_core.add(core)
     ct_cores = y_core.keys()  # 核心点集
-    ct_cores = set(ct_cores)
+    ct_cores = list(set(ct_cores))
     # 聚类
+    print('Clustering')
     while len(ct_cores) != 0:
-        t = list(ct_cores)
-        core = t.pop()
+        core = ct_cores[0]
+        del ct_cores[0]
         friends = y_core[core]  # set类型
         now_class = friends.copy()
         pre_class = set()
@@ -390,7 +394,7 @@ def DBSCAN(same_data, Eps=0.003, MinPts=4):
                 except:  # 非核心点
                     now_class.add(point)
         class_list.append(now_class)
-        ct_cores = ct_cores - now_class
+        ct_cores = list(set(ct_cores) - now_class)
     return class_list
 
 
@@ -442,7 +446,7 @@ def get_core_distance(core_points, MinPts):
     core_distance = {}
     for key in core_points.keys():
         t = sorted(core_points[key], key=lambda x: x[1])
-        core_distance[key] = t[MinPts - 1][1]  # 核心距离那个点
+        core_distance[key] = t[MinPts][1]  # 核心距离那个点
     return core_distance
 
 
@@ -526,15 +530,21 @@ def OPTICS(same_data, Eps=0.003, MinPts=4):
                 for i in range(same_point):
                     t_core.append(tup)
         if len(t_core) >= MinPts:  # 是核心点
-            y_core[core] = t_core
+            tup = (core, 0)
+            t_core.append(tup)
+            s = t_core.copy()
+            y_core[core] = s
         else:
             f_core.add(core)
     core_distance = get_core_distance(y_core, MinPts)
+    # 核心点的直接密度可达点去重
     for key in y_core.keys():
         y_core[key] = set(y_core[key])
+
     core_points = y_core.keys()
     core_list = list(y_core.keys())  # 核心点集
-    point_list = core_list + list(f_core)
+    point_list = core_list + list(f_core)  # 所有点集
+    #  初始化所有点的核心距离，可达距离。核心距离小，可达距离大
     for p in point_list:
         reach_distance[p] = 999
         try:

@@ -11,5 +11,4 @@ if __name__ == '__main__':
     same_data = {}
     for i in res:
         same_data[float(i[0])] = int(i[1])
-    layer = st.DBSCAN(same_data, Eps=0.2, MinPts=10)
-    print(layer)
+    layer2 = st.DBSCAN(same_data, Eps=0.2, MinPts=10)
