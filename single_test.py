@@ -162,29 +162,34 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
         if s < 0.0000000000000001:
             s = 0
         denominator = denominator + s
-        molecular = data_sum * w * std
+        molecular = sample_sum * w * std   # 分母 = 抽样量 * 该层数据占比 * 该层标准差
         molecular_list.append(molecular)
     s = 0
     for molecular, df in zip(molecular_list, df_list):
         specimen = molecular / denominator
-        # print(molecular, denominator, specimen)
         sam = float(specimen) / len(df)
-        print(sam)
         if sam > 1:
+            print(df)
+            print(molecular, denominator, specimen)
             sam = 1
         df_sample = df.sample(frac=sam, replace=False, axis=0)
-        # print(len(df_sample))
+        print(sam, len(df_sample))
+        print('-----------------------------------')
         s = s + df_sample.sum()
         lest = lest - len(df_sample)
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
-    sam = lest / len(zero_data)
-    print(sam)
-    if sam > 1:
-        sam = 1
-    elif sam < 0:
-        sam = 0
-    df_sample = zero_data.sample(frac=sam, replace=False, axis=0)
-    df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
+    try:
+        sam = lest / len(zero_data)
+        print(sam)
+        if sam > 1:
+            sam = 1
+        elif sam < 0:
+            sam = 0
+        df_sample = zero_data.sample(frac=sam, replace=False, axis=0)
+        df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
+    except:
+        pass
+
 
 
 def layered_by_k_means():
@@ -407,16 +412,6 @@ def Layer_by_DBSCAN():
     cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.dbscan_result;'
     cursor.execute(sql)
-    '''
-    sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
-    cursor.execute(sql)
-    result = cursor.fetchall()
-    data = []
-    for i in result:
-        if float(i[0]) == 0:
-            continue
-        data.append(float(i[0]))
-    '''
     sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
     cursor.execute(sql)
     res = cursor.fetchall()
