@@ -685,6 +685,3 @@ def test():
         datas = datas + 50
         count = count + 1
     wb.save('layer_test2.xlsx')
-
-
-Cluster_by_OPTICS()
