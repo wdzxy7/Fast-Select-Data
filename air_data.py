@@ -3,65 +3,80 @@ import single_test as st
 import pymysql
 from pandas import DataFrame
 
-sample_sum = 200
+sample_sum = 5000
+c = 'US'
+p = 'pm1'
+Eps = 0.002
+MinPts = 8
 
 
 def dbscan_test():
+    print('DBSCAN START')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
     database = 'dbscan_result'
     sql = 'TRUNCATE TABLE unknown_data.dbscan_result;'
     cursor.execute(sql)
-    sql = 'select value, count(value) from unknown_data.single_data where parameter=\'pm1\' group by value;'
+    # sql = 'select value, count(value) from unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\' group by value;'
+    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
     cursor.execute(sql)
     res = cursor.fetchall()
     same_data = {}
     for i in res:
         same_data[float(i[0])] = int(i[1])
-    layer = st.OPTICS(same_data, Eps=0.2, MinPts=10)
-
+    layer = st.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
+    for i in layer:
+        print(i)
 
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
-    sql = 'select value from unknown_data.single_data where parameter=\'pm1\';'
+    # sql = 'SELECT value FROM unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\';'
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
     df = DataFrame(sql_result, columns=['score']).astype('float')
     df_list, zero_data = st.spilt_data_by_layer(layer, df)
     data_sum = len(sql_result)
-    st.sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database)
+    st.avg_sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database)
 
 
 def optics_test():
+    print('OPTICS START')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
     database = 'optics_result'
     sql = 'TRUNCATE TABLE unknown_data.' + database + ';'
     cursor.execute(sql)
-    sql = 'select value, count(value) from unknown_data.single_data where parameter=\'pm1\' group by value;'
+    # sql = 'SELECT value, count(value) FROM unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\' group by value;'
+    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
     cursor.execute(sql)
     res = cursor.fetchall()
     same_data = {}
     for i in res:
         same_data[float(i[0])] = int(i[1])
-    layer = st.OPTICS(same_data, Eps=0.2, MinPts=10)
+    layer = st.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
+    for i in layer:
+        print(i)
 
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
-    sql = 'select value from unknown_data.single_data where parameter=\'pm1\';'
+    # sql = 'SELECT value FROM unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\';'
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
     df = DataFrame(sql_result, columns=['score']).astype('float')
     df_list, zero_data = st.spilt_data_by_layer(layer, df)
     data_sum = len(sql_result)
-    st.sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database)
+    st.avg_sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database)
 
 
 def random_test():
+    print('RANDOM START')
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.random_result;'
     cursor.execute(sql)
-    sql = 'select value from unknown_data.single_data where parameter=\'pm1\';'
+    # sql = 'SELECT value FROM unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\';'
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
     df = DataFrame(sql_result, columns=['score']).astype('float')
@@ -70,12 +85,14 @@ def random_test():
 
 
 def avg_layer_test():
+    print('AVG START')
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
     sql = 'TRUNCATE TABLE unknown_data.avg_result;'
     cursor.execute(sql)
-    sql = 'select value from unknown_data.single_data where parameter=\'pm1\' ORDER BY value;'
+    # sql = 'SELECT value FROM unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\' order by value;'
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
     df = DataFrame(sql_result, columns=['score']).astype('float')
@@ -97,5 +114,8 @@ def avg_layer_test():
     store_df.to_sql('avg_result', con=engine, if_exists='append', index=False, chunksize=100000)
 
 
-random_test()
-avg_layer_test()
+if __name__ == '__main__':
+    dbscan_test()
+    optics_test()
+    random_test()
+    avg_layer_test()

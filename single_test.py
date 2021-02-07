@@ -150,10 +150,10 @@ def spilt_data_by_layer(layer, data_df):
 
 
 def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
-    f_z_sample_sum = sample_sum * (len(zero_data) / data_sum)
     denominator = 0
     lest = sample_sum
     molecular_list = []
+    # 计算公式所需的每一层的分子分母
     for df in df_list:
         w = len(df) / data_sum
         desc = df.describe()
@@ -164,23 +164,78 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
         denominator = denominator + s
         molecular = sample_sum * w * std   # 分母 = 抽样量 * 该层数据占比 * 该层标准差
         molecular_list.append(molecular)
-    s = 0
+    # 利用公式计算出每层抽取样本数量进行抽样
     for molecular, df in zip(molecular_list, df_list):
         specimen = molecular / denominator
         sam = float(specimen) / len(df)
         if sam > 1:
-            print(df)
-            print(molecular, denominator, specimen)
+            # print(df)
+            # print(molecular, denominator, specimen)
             sam = 1
         df_sample = df.sample(frac=sam, replace=False, axis=0)
-        print(sam, len(df_sample))
-        print('-----------------------------------')
-        s = s + df_sample.sum()
+        # print(sam, len(df_sample))
+        # print('-----------------------------------')
         lest = lest - len(df_sample)
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
+    # 抽取0项
     try:
         sam = lest / len(zero_data)
-        print(sam)
+        # print(sam)
+        if sam > 1:
+            sam = 1
+        elif sam < 0:
+            sam = 0
+        df_sample = zero_data.sample(frac=sam, replace=False, axis=0)
+        df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
+    except:
+        pass
+
+
+def avg_sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
+    denominator = 0
+    lest = sample_sum
+    molecular_list = []
+    # 计算公式所需的每一层的分子分母
+    for df in df_list:
+        w = len(df) / data_sum
+        desc = df.describe()
+        std = round(float(desc.iloc[2]), 10)
+        s = w * std
+        if s < 0.0000000000000001:
+            s = 0
+        denominator = denominator + s
+        molecular = sample_sum * w * std  # 分母 = 抽样量 * 该层数据占比 * 该层标准差
+        molecular_list.append(molecular)
+    # 利用公式计算出每层抽取样本数量进行抽样
+    for molecular, df in zip(molecular_list, df_list):
+        specimen = molecular / denominator  # 抽样数量
+        df_length = len(df)
+        sam = float(specimen) / df_length
+        # 需要全部抽取
+        if sam > 1:
+            sam = 1
+            df_sample = df.sample(frac=sam, replace=False, axis=0)
+        else:
+            hist = int(df_length / specimen)
+            sam = 1 / hist
+            df_sample = DataFrame([], columns=['score']).astype('float')
+            front = 0
+            back = 0
+            max_range = front + df_length - 1
+            while front < max_range:
+                data = df.loc[front:back, :]
+                sample = data.sample(frac=sam, replace=False, axis=0)
+                df_sample = df_sample.append(sample, ignore_index=True)
+                front = back + 1
+                back = back + hist
+                if back > max_range:
+                    back = max_range
+        lest = lest - len(df_sample)
+        df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
+    # 抽取0项
+    try:
+        sam = lest / len(zero_data)
+        # print(sam)
         if sam > 1:
             sam = 1
         elif sam < 0:

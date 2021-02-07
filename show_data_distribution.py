@@ -6,16 +6,19 @@ import numpy as np
 if __name__ == '__main__':
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
-    sql = 'SELECT value FROM unknown_data.single_data WHERE parameter = \'pm1\';'
-    cursor.execute(sql)
-    res = cursor.fetchall()
-    data = []
-    for i in res:
-        data.append(i[0])
-    data = np.array(data)
-    print(data)
-    print('-------------------------------------------------------------')
-    print(np.sort(data))
-    pl.hist(data, 100)
-    pl.title('exponential_data')
-    pl.show()
+    pa = ['pm1', 'pm10', 'pm25', 'um010', 'um025', 'um100']
+    country = ['IE', 'US']
+    for c in country:
+        for p in pa:
+            ti = c + p
+            sql = 'SELECT value FROM unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\';'
+            print(sql)
+            cursor.execute(sql)
+            res = cursor.fetchall()
+            data = []
+            for i in res:
+                data.append(i[0])
+            data = np.array(data)
+            pl.hist(data, 100)
+            pl.title(ti)
+            pl.show()
