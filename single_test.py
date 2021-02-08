@@ -1,10 +1,11 @@
-from decimal import Decimal
-import pymysql
-from pandas import DataFrame
 import time
-from sqlalchemy import create_engine
+import math
 import random
+import pymysql
+from decimal import Decimal
+from pandas import DataFrame
 from openpyxl import Workbook
+from sqlalchemy import create_engine
 
 
 def spilt_by_score():
@@ -220,7 +221,7 @@ def avg_sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database
             sam = 1
             df_sample = df.sample(frac=sam, replace=False, axis=0)
         else:
-            hist = int(df_length / specimen)
+            hist = round(df_length / specimen)
             sam = 1 / hist
             df_sample = DataFrame([], columns=['score']).astype('float')
             front = 0
