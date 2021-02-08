@@ -172,12 +172,15 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
             # print(df)
             # print(molecular, denominator, specimen)
             sam = 1
+        if sam < 0:
+            sam = 0
         df_sample = df.sample(frac=sam, replace=False, axis=0)
         # print(sam, len(df_sample))
         # print('-----------------------------------')
         lest = lest - len(df_sample)
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
     # 抽取0项
+    '''
     try:
         sam = lest / len(zero_data)
         # print(sam)
@@ -189,6 +192,7 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
     except:
         pass
+    '''
 
 
 def avg_sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
@@ -233,6 +237,7 @@ def avg_sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database
         lest = lest - len(df_sample)
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
     # 抽取0项
+    '''
     try:
         sam = lest / len(zero_data)
         # print(sam)
@@ -244,6 +249,7 @@ def avg_sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
     except:
         pass
+    '''
 
 
 def layered_by_k_means():

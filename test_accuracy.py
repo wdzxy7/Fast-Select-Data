@@ -1,3 +1,5 @@
+import time
+
 import pymysql
 from pandas import DataFrame
 from decimal import Decimal
@@ -91,6 +93,7 @@ def real_data_test():
     res = cursor.fetchall()
     same_data = {}
     for i in res:
+
         same_data[float(i[0])] = int(i[1])
     # 聚类分层
     optics_layer = st.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
@@ -146,7 +149,7 @@ def real_data_test():
     df = DataFrame(test_result, columns=columns_list)
     df.index = ind
     print(df)
-    df.to_csv('Clustering_accuracy.csv')
+    df.to_csv('temp_Clustering_accuracy.csv')
 
 
 if __name__ == '__main__':
