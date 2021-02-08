@@ -2,9 +2,14 @@ import pymysql
 from pandas import DataFrame
 from decimal import Decimal
 import pandas as pd
+import single_test as st
+from sqlalchemy import create_engine
+
+Eps = 0.002
+MinPts = 8
 
 
-if __name__ == '__main__':
+def create_data_test():
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
     # 抽样
@@ -36,3 +41,113 @@ if __name__ == '__main__':
     df.index = ind
     print(df)
     df.to_csv('accuracy.csv')
+
+
+def avg_sampling(df, sample_sum, engine):
+    front = 0
+    back = 0
+    data_sum = len(df)
+    max_range = front + data_sum - 1
+    hist = int(data_sum / sample_sum)
+    sam = 1 / hist
+    store_df = DataFrame([], columns=['score']).astype('float')
+    while front < max_range:
+        data = df.loc[front:back, :]
+        df_sample = data.sample(frac=sam, replace=False, axis=0)
+        store_df = store_df.append(df_sample, ignore_index=True)
+        front = back + 1
+        back = back + hist
+        if back > max_range:
+            back = max_range
+    store_df.to_sql('avg_result', con=engine, if_exists='append', index=False, chunksize=100000)
+
+
+def real_data_test():
+    engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
+    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    cursor = connect.cursor()
+    # 测试sql
+    t_sql1 = 'select avg(score) from unknown_data.k_means_result;'
+    t_sql2 = 'select avg(score) from unknown_data.avg_k_means_result;'
+    t_sql3 = 'select avg(score) from unknown_data.dbscan_result;'
+    t_sql4 = 'select avg(score) from unknown_data.avg_dbscan_result;'
+    t_sql5 = 'select avg(score) from unknown_data.optics_result;'
+    t_sql6 = 'select avg(score) from unknown_data.avg_optics_result;'
+    t_sql7 = 'select avg(score) from unknown_data.random_result;'
+    t_sql8 = 'select avg(score) from unknown_data.avg_result;'
+    test_sql = [t_sql1, t_sql2, t_sql3, t_sql4, t_sql5, t_sql6, t_sql7, t_sql8]
+    # 清表sql
+    sql1 = 'TRUNCATE TABLE unknown_data.optics_result;'
+    sql2 = 'TRUNCATE TABLE unknown_data.dbscan_result;'
+    sql3 = 'TRUNCATE TABLE unknown_data.random_result;'
+    sql4 = 'TRUNCATE TABLE unknown_data.avg_result;'
+    sql5 = 'TRUNCATE TABLE unknown_data.avg_optics_result;'
+    sql6 = 'TRUNCATE TABLE unknown_data.avg_dbscan_result;'
+    sql7 = 'TRUNCATE TABLE unknown_data.k_means_result;'
+    sql8 = 'TRUNCATE TABLE unknown_data.avg_k_means_result;'
+    clear_sql = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8]
+    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
+    cursor.execute(sql)
+    res = cursor.fetchall()
+    same_data = {}
+    for i in res:
+        same_data[float(i[0])] = int(i[1])
+    # 聚类分层
+    optics_layer = st.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
+    dbscan_layer = st.DBSCAN(same_data, Eps=Eps, MinPts=MinPts)
+    k_means_layer = st.k_means_three(list(same_data.keys()))
+    # 查询数据
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    cursor.execute(sql)
+    sql_result = cursor.fetchall()
+    data = DataFrame(sql_result, columns=['score']).astype('float')
+    # 数据分层
+    opdata, zero_data = st.spilt_data_by_layer(optics_layer, data)
+    dbdata, zero_data = st.spilt_data_by_layer(dbscan_layer, data)
+    kmdata, zero_data = st.spilt_data_by_layer(k_means_layer, data)
+    data_sum = len(sql_result)
+    # 测试数据
+    stand = 0.000389
+    test_result = []
+    t_result = []
+    ind = []
+    for sample_sum in range(500, 15001, 500):
+        ind.append(sample_sum)
+        print(sample_sum)
+        t_result.clear()
+        # 清空数据表
+        for sql in clear_sql:
+            cursor.execute(sql)
+        # K-MEANS
+        st.sampling_data(engine, kmdata, data_sum, sample_sum, zero_data, 'k_means_result')
+        st.avg_sampling_data(engine, kmdata, data_sum, sample_sum, zero_data, 'avg_k_means_result')
+        # DBSCAN
+        st.sampling_data(engine, dbdata, data_sum, sample_sum, zero_data, 'dbscan_result')
+        st.avg_sampling_data(engine, dbdata, data_sum, sample_sum, zero_data, 'avg_dbscan_result')
+        # OPTICS
+        st.sampling_data(engine, opdata, data_sum, sample_sum, zero_data, 'optics_result')
+        st.avg_sampling_data(engine, opdata, data_sum, sample_sum, zero_data, 'avg_optics_result')
+        # RANDOM
+        df_sample = data.sample(frac=sample_sum / data_sum, replace=False, axis=0)
+        df_sample.to_sql('random_result', con=engine, if_exists='append', index=False, chunksize=100000)
+        # AVG
+        avg_sampling(data, sample_sum, engine)
+        # TEST: K-MEANS, DBSCAN, OPTICS, RANDOM, AVG
+        for test in test_sql:
+            cursor.execute(test)
+            result = cursor.fetchall()
+            avg = round(float(result[0][0]), 6)
+            accuracy = round(abs(avg - stand) / stand * 100, 6)
+            t_result.append(accuracy)
+        t = t_result.copy()
+        test_result.append(t)
+    # 存储结果
+    columns_list = ['K-MEANS', 'avg_K-MEANS', 'DBSCAN', 'avg_DBSCAN', 'OPTICS', 'avg_OPTICS', 'RANDOM', 'AVG']
+    df = DataFrame(test_result, columns=columns_list)
+    df.index = ind
+    print(df)
+    df.to_csv('Clustering_accuracy.csv')
+
+
+if __name__ == '__main__':
+    real_data_test()
