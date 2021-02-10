@@ -3,7 +3,7 @@ import single_test as st
 import pymysql
 from pandas import DataFrame
 
-sample_sum = 15000
+sample_sum = 1500
 c = 'US'
 p = 'pm1'
 Eps = 0.002
@@ -116,8 +116,6 @@ def avg_layer_test():
 
 if __name__ == '__main__':
     dbscan_test()
-    '''
     optics_test()
     random_test()
     avg_layer_test()
-    '''

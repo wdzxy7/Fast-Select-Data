@@ -6,14 +6,14 @@ from pandas import DataFrame
 import pandas as pd
 
 
-def get_data():
-    data = pd.read_excel(time_path, sheet_name='Sheet1')
+def get_data(file_path, proportion_list, sheet):
+    data = pd.read_excel(file_path, sheet_name=sheet)
     df1 = DataFrame(data)
     df1.columns = proportion_list
     return df1
 
 
-def draw_picture1(x_data):
+def draw_picture1(x_data, distribution):
     index = x_data.index.values
     print(index)
     plt.title(distribution)
@@ -21,7 +21,7 @@ def draw_picture1(x_data):
     plt.show()
 
 
-def get_sample_time():
+def get_sample_time(accuracy_path, name):
     data = pd.read_excel(accuracy_path, sheet_name=name)
     df2 = DataFrame(data)
     # 100%数据行
@@ -39,7 +39,7 @@ def get_sample_time():
     return df3.sum(axis=1) / 12
 
 
-if __name__ == '__main__':
+def draw_create_data():
     plt.figure(figsize=(20, 8))
     distribution = 'exponential'
     # distribution = 'random'
@@ -50,7 +50,7 @@ if __name__ == '__main__':
                        '0.00085%', '0.0009%', '0.00095%', '0.001%']
     accuracy_path = distribution + '_data_accuracy.xlsx'
     time_path = distribution + '_data_create_time.xlsx'
-    df = get_data()
+    df = get_data(time_path, proportion_list, 'Sheet1')
     x_data = []
     # 迭代每一列求出平均值
     for proportion in proportion_list:
@@ -61,14 +61,14 @@ if __name__ == '__main__':
     df.index = proportion_list
     print('x_data')
     # print(df)
-    draw_picture1(df)
+    draw_picture1(df, distribution)
 
     plt.figure(figsize=(20, 8))
     df_list = []
     # 计算每一个sample中的误差率
     for num in range(1, 11):
         name = 'Sheet' + str(num)
-        df = get_sample_time()
+        df = get_sample_time(accuracy_path, name)
         df_list.append(df)
     df = df_list[0]
     # 把每一个sample的误差率求和然后求平均值
@@ -80,4 +80,50 @@ if __name__ == '__main__':
     df.index = proportion_list
     print('accuracy')
     print(df)
-    draw_picture1(df)
+    draw_picture1(df, distribution)
+
+
+def read_excel(file_path, sheet):
+    data = pd.read_excel(file_path, sheet_name=sheet)
+    df = DataFrame(data)
+    return df
+
+
+def change(x):
+    if x > 100:
+        return 100
+    else:
+        return x
+
+
+def draw_unknown_data():
+    # plt.figure()
+    file_path = 'Clustering_accuracy.xlsx'
+    df = DataFrame()
+    for i in range(1, 11):
+        sheet = 'Sheet' + str(i)
+        data = read_excel(file_path, sheet)
+        if i == 1:
+            df = data
+        else:
+            df = df + data
+    df = df / 10
+    df['K-MEANS'] = df['K-MEANS'].apply(lambda x: change(x))
+    df['avg_K-MEANS'] = df['avg_K-MEANS'].apply(lambda x: change(x))
+    df['DBSCAN'] = df['DBSCAN'].apply(lambda x: change(x))
+    df['avg_DBSCAN'] = df['avg_DBSCAN'].apply(lambda x: change(x))
+    df['OPTICS'] = df['OPTICS'].apply(lambda x: change(x))
+    df['avg_OPTICS'] = df['avg_OPTICS'].apply(lambda x: change(x))
+    df['RANDOM'] = df['RANDOM'].apply(lambda x: change(x))
+    df['AVG'] = df['AVG'].apply(lambda x: change(x))
+    df = df.drop('sample_sum', axis=1)
+    print(df)
+    x_l = []
+    for i in range(0, 30, 10):
+        x_l.append(i)
+    t = df.plot(figsize=(20, 8))
+    t.set_xticks(x_l)
+    plt.show()
+
+
+draw_unknown_data()
