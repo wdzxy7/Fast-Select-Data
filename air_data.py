@@ -6,8 +6,8 @@ from pandas import DataFrame
 sample_sum = 1500
 c = 'US'
 p = 'pm1'
-Eps = 0.002
-MinPts = 8
+Eps = 0.2
+MinPts = 60
 
 
 def dbscan_test():
@@ -17,8 +17,8 @@ def dbscan_test():
     database = 'dbscan_result'
     sql = 'TRUNCATE TABLE unknown_data.dbscan_result;'
     cursor.execute(sql)
-    # sql = 'select value, count(value) from unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\' group by value;'
-    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
+    sql = 'select value, count(value) from unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\' group by value;'
+    # sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
     cursor.execute(sql)
     res = cursor.fetchall()
     same_data = {}
@@ -29,8 +29,8 @@ def dbscan_test():
         print(i)
 
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
-    # sql = 'SELECT value FROM unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\';'
-    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    sql = 'SELECT value FROM unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\';'
+    # sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
     df = DataFrame(sql_result, columns=['score']).astype('float')
@@ -46,8 +46,8 @@ def optics_test():
     database = 'optics_result'
     sql = 'TRUNCATE TABLE unknown_data.' + database + ';'
     cursor.execute(sql)
-    # sql = 'SELECT value, count(value) FROM unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\' group by value;'
-    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
+    sql = 'SELECT value, count(value) FROM unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\' group by value;'
+    # sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
     cursor.execute(sql)
     res = cursor.fetchall()
     same_data = {}
@@ -56,7 +56,6 @@ def optics_test():
     layer = st.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
     for i in layer:
         print(i)
-
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     # sql = 'SELECT value FROM unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\';'
     sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
@@ -116,6 +115,8 @@ def avg_layer_test():
 
 if __name__ == '__main__':
     dbscan_test()
+    '''
     optics_test()
     random_test()
     avg_layer_test()
+    '''

@@ -1,14 +1,10 @@
 import time
-
 import pymysql
 from pandas import DataFrame
 from decimal import Decimal
 import pandas as pd
 import single_test as st
 from sqlalchemy import create_engine
-
-Eps = 0.002
-MinPts = 8
 
 
 def create_data_test():
@@ -88,19 +84,24 @@ def real_data_test():
     sql7 = 'TRUNCATE TABLE unknown_data.k_means_result;'
     sql8 = 'TRUNCATE TABLE unknown_data.avg_k_means_result;'
     clear_sql = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8]
-    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
+    # incline data
+    # sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
+    # air data
+    sql = 'select value, count(value) from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;'
     cursor.execute(sql)
     res = cursor.fetchall()
     same_data = {}
     for i in res:
-
         same_data[float(i[0])] = int(i[1])
     # 聚类分层
     optics_layer = st.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
     dbscan_layer = st.DBSCAN(same_data, Eps=Eps, MinPts=MinPts)
     k_means_layer = st.k_means_three(list(same_data.keys()))
     # 查询数据
-    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    # incline data
+    # sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    # air data
+    sql = 'select value from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
     data = DataFrame(sql_result, columns=['score']).astype('float')
@@ -114,7 +115,10 @@ def real_data_test():
     test_result = []
     t_result = []
     ind = []
-    for sample_sum in range(500, 15001, 500):
+    # incline data
+    # for sample_sum in range(500, 15001, 500):
+    # air data
+    for sample_sum in range(100, 400, 100):
         ind.append(sample_sum)
         print(sample_sum)
         t_result.clear()
@@ -153,4 +157,10 @@ def real_data_test():
 
 
 if __name__ == '__main__':
+    # incline data
+    Eps = 0.002
+    MinPts = 8
+    # air data
+    Eps = 0.2
+    MinPts = 60
     real_data_test()
