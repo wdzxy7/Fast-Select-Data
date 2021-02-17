@@ -100,14 +100,15 @@ def draw_unknown_data():
     # plt.figure()
     file_path = 'Clustering_accuracy.xlsx'
     df = DataFrame()
-    for i in range(1, 11):
+    sheet_sum = 10
+    for i in range(1, sheet_sum + 1):
         sheet = 'Sheet' + str(i)
         data = read_excel(file_path, sheet)
         if i == 1:
             df = data
         else:
             df = df + data
-    df = df / 10
+    df = df / sheet_sum
     df['K-MEANS'] = df['K-MEANS'].apply(lambda x: change(x))
     df['avg_K-MEANS'] = df['avg_K-MEANS'].apply(lambda x: change(x))
     df['DBSCAN'] = df['DBSCAN'].apply(lambda x: change(x))

@@ -710,6 +710,10 @@ def sample_by_layer_rate():
     sample_by_rate(engine, df_list, data_sum, sample_sum, zero_data)
 
 
+def Hierarchical(same_data, cluster):
+    pass
+
+
 def test():
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
