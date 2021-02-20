@@ -2,6 +2,8 @@ from sqlalchemy import create_engine
 import single_test as st
 import pymysql
 from pandas import DataFrame
+import sql_connect
+
 
 sample_sum = 1500
 c = 'US'
@@ -12,15 +14,18 @@ MinPts = 60
 
 def dbscan_test():
     print('DBSCAN START')
+    sql_con = sql_connect.sql_c()
+    '''
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
+    '''
     database = 'dbscan_result'
     sql = 'TRUNCATE TABLE unknown_data.dbscan_result;'
-    cursor.execute(sql)
+    sql_con.cursor.execute(sql)
     sql = 'select value, count(value) from unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\' group by value;'
     # sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
-    cursor.execute(sql)
-    res = cursor.fetchall()
+    sql_con.cursor.execute(sql)
+    res = sql_con.cursor.fetchall()
     same_data = {}
     for i in res:
         same_data[float(i[0])] = int(i[1])
@@ -31,8 +36,8 @@ def dbscan_test():
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     sql = 'SELECT value FROM unknown_data.air WHERE parameter = \'' + p + '\' and country = \'' + c + '\';'
     # sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
-    cursor.execute(sql)
-    sql_result = cursor.fetchall()
+    sql_con.cursor.execute(sql)
+    sql_result = sql_con.cursor.fetchall()
     df = DataFrame(sql_result, columns=['score']).astype('float')
     df_list, zero_data = st.spilt_data_by_layer(layer, df)
     data_sum = len(sql_result)
