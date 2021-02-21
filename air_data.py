@@ -29,7 +29,7 @@ def dbscan_test():
     same_data = {}
     for i in res:
         same_data[float(i[0])] = int(i[1])
-    layer = st.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
+    layer = st.DBSCAN(same_data, Eps=Eps, MinPts=MinPts)
     for i in layer:
         print(i)
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')

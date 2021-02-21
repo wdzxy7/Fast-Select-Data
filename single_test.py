@@ -419,7 +419,7 @@ def without_z_layer():
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
 
 
-def DBSCAN(same_data, Eps=0.003, MinPts=4):
+def DBSCAN(same_data, Eps=0.002, MinPts=8):
     class_list = []
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
@@ -429,7 +429,12 @@ def DBSCAN(same_data, Eps=0.003, MinPts=4):
         t_core.clear()
         for score in data:  # 找出核心点在Eps邻域中的点
             same_point = same_data[score]  # 相同点数量
-            if round(abs(core - score), 4) <= Eps and abs(core - score) != 0:
+            # 包括自己包含边界
+            # if round(abs(core - score), 4) <= Eps:
+            # 官方计算方法
+            s = core-score
+            distance = math.sqrt(math.pow(s, 2))
+            if distance <= Eps:
                 for i in range(same_point):
                     t_core.append(score)
         if len(t_core) >= MinPts:  # 是核心点
@@ -440,6 +445,8 @@ def DBSCAN(same_data, Eps=0.003, MinPts=4):
             f_core.add(core)
     ct_cores = y_core.keys()  # 核心点集
     ct_cores = list(set(ct_cores))
+    print('core_data')
+    print(sorted(ct_cores))
     # 聚类
     print('Clustering')
     while len(ct_cores) != 0:
@@ -461,6 +468,7 @@ def DBSCAN(same_data, Eps=0.003, MinPts=4):
                     now_class.add(point)
         class_list.append(now_class)
         ct_cores = list(set(ct_cores) - now_class)
+    print('包括自己包不含边界f_core:', f_core)
     return class_list
 
 
@@ -482,6 +490,8 @@ def Cluster_by_DBSCAN():
             continue
         same_data[float(i[0])] = int(i[1])
     layer = DBSCAN(same_data)
+    for i in layer:
+        print(i)
     sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
@@ -581,7 +591,7 @@ def OPTICS(same_data, Eps=0.003, MinPts=4):
         t_core = []
         for score in data:  # 找出核心点在Eps邻域中的点
             same_point = same_data[score]  # 有多少个相同点
-            if round(abs(core - score), 4) <= Eps and abs(core - score) != 0:
+            if round(abs(core - score), 4) < Eps and abs(core - score) != 0:
                 tup = (score, round(abs(core - score), 3))
                 for i in range(same_point):
                     t_core.append(tup)
@@ -751,3 +761,5 @@ def test():
         datas = datas + 50
         count = count + 1
     wb.save('layer_test2.xlsx')
+
+Cluster_by_DBSCAN()
