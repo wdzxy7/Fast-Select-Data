@@ -1,15 +1,14 @@
 import numpy as np
 import pymysql
 from sklearn.cluster import DBSCAN,KMeans,OPTICS
-from sklearn import datasets
-import random
 import matplotlib.pyplot as plt
 import time
-import copy
+import operator
+from scipy.spatial.distance import pdist
+from scipy.spatial.distance import squareform
 
 
 if __name__ == '__main__':
-
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
     sql = 'select score from unknown_data.data3 where `index`=22021001101410011321 and score!=0 order by score;'
@@ -19,10 +18,9 @@ if __name__ == '__main__':
     for i in result:
         data.append((float(i[0]), 0))
     arr = np.array(data)
-    # cluster = DBSCAN(eps=0.002, min_samples=8).fit(arr)
+    cluster = DBSCAN(eps=0.002, min_samples=8).fit(arr)
     # cluster = KMeans(n_clusters=3).fit(arr)
-    cluster = OPTICS(min_samples=8, max_eps=0.002)
-
+    # cluster = OPTICS(min_samples=8).fit(arr)
     result = []
     for i, j in zip(cluster.labels_, data):
         tup = (i, j)
@@ -36,7 +34,7 @@ if __name__ == '__main__':
             result_dict[i[0]] = []
             result_dict[i[0]].append(i[1][0])
     for key in result_dict:
-        print(key, sorted(result_dict[key]))
+        print(key, sorted(result_dict[key])),
 
 '''
 def find_neighbor(j, x, eps):

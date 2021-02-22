@@ -1,4 +1,5 @@
 import time
+import numpy as np
 import math
 import random
 import pymysql
@@ -446,8 +447,8 @@ def DBSCAN(same_data, Eps=0.002, MinPts=8):
             f_core.add(core)
     ct_cores = y_core.keys()  # 核心点集
     ct_cores = list(set(ct_cores))
-    print('core_data')
-    print(sorted(ct_cores))
+    # print('core_data')
+    # print(sorted(ct_cores))
     # 聚类
     print('Clustering')
     while len(ct_cores) != 0:
@@ -469,7 +470,7 @@ def DBSCAN(same_data, Eps=0.002, MinPts=8):
                     now_class.add(point)
         class_list.append(now_class)
         ct_cores = list(set(ct_cores) - now_class)
-    print('包括自己包不含边界f_core:', f_core)
+    # print('包括自己包不含边界f_core:', sorted(list(f_core)))
     return class_list
 
 
@@ -513,7 +514,7 @@ def get_core_distance(core_points, MinPts):
     core_distance = {}
     for key in core_points.keys():
         t = sorted(core_points[key], key=lambda x: x[1])
-        core_distance[key] = t[MinPts][1]  # 核心距离那个点
+        core_distance[key] = t[MinPts - 1][1]  # 核心距离那个点
     return core_distance
 
 
@@ -556,34 +557,27 @@ def insert_point(result_list, sorted_list, point_friends, core_d, list_ind, reac
 def OPTICS_Cluster(result, reach_distance, core_distance, Eps):
     layer = []
     t_list = []
+    t_Eps = Eps * 1
     for point in result:
         rd = reach_distance[point]
         cd = core_distance[point]
-        if rd > Eps or rd == 999:
-            if cd != -999 and cd <= Eps:
+        if (rd > t_Eps) or (rd == 9999):
+            # 形成新类
+            if (cd != 9999) and (cd <= t_Eps):
                 t = t_list.copy()
                 layer.append(t)
                 t_list.clear()
                 t_list.append(point)
+        # 加入当前类
         else:
             t_list.append(point)
-        '''
-        if rd <= Eps:
-            t_list.append(point)
-        else:
-            if cd <= Eps:
-                l = t_list.copy()
-                layer.append(l)
-                t_list.clear()
-                t_list.append(point)
-        '''
     t = t_list.copy()
     layer.append(t)
     del layer[0]
     return layer
 
 
-def OPTICS(same_data, Eps=0.003, MinPts=4):
+def OPTICS(same_data, Eps=0.002, MinPts=8):
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
     reach_distance = {}
@@ -598,12 +592,11 @@ def OPTICS(same_data, Eps=0.003, MinPts=4):
             s = core - score
             distance = math.sqrt(math.pow(s, 2))
             if distance <= Eps:
+                # 这个点到核心点的距离
                 tup = (score, round(abs(core - score), 3))
                 for i in range(same_point):
                     t_core.append(tup)
         if len(t_core) >= MinPts:  # 是核心点
-            tup = (core, 0)
-            t_core.append(tup)
             s = t_core.copy()
             y_core[core] = s
         else:
@@ -612,22 +605,23 @@ def OPTICS(same_data, Eps=0.003, MinPts=4):
     # 核心点的直接密度可达点去重
     for key in y_core.keys():
         y_core[key] = set(y_core[key])
-
     core_points = y_core.keys()
     core_list = list(y_core.keys())  # 核心点集
     point_list = core_list + list(f_core)  # 所有点集
-    #  初始化所有点的核心距离，可达距离。核心距离小，可达距离大
+    #  初始化所有点的核心距离，可达距离。核心距离有则有无则最大，可达距离初始最大
     for p in point_list:
-        reach_distance[p] = 999
-        try:
-            core_distance[p]
-        except:
-            core_distance[p] = -999
+        for p in point_list:
+            reach_distance[p] = 9999
+            try:
+                core_distance[p]
+            except:
+                core_distance[p] = 9999
     extend_set = set()  # 存放拓展了的点
     result_list = []  # 结果队列
     sorted_list = []  # 有序队列
     while len(point_list) != 0:
         point = point_list[0]
+        # 该点没有被拓展
         if point not in extend_set:
             del point_list[0]
             extend_set.add(point)
@@ -677,7 +671,7 @@ def Cluster_by_OPTICS():
         same_data[float(i[0])] = int(i[1])
     layer = OPTICS(same_data)
     for i in layer:
-        print(i)
+        print(sorted(i))
     sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
@@ -768,5 +762,4 @@ def test():
         count = count + 1
     wb.save('layer_test2.xlsx')
 
-
-layered_by_k_means()
+Cluster_by_OPTICS()
