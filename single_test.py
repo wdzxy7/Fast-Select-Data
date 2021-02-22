@@ -81,7 +81,7 @@ def k_means_three(data):
         u_list.append(data[i])
     pre_u = [0, 0, 0]  # 存上一次的u结果
     distance = []  # 这个数到每个u的距离
-    precision = 5
+    precision = 8
     while round(u_list[0], precision) != round(pre_u[0], precision) or round(u_list[1], precision) != \
             round(pre_u[1], precision) or round(u_list[2], precision) != round(pre_u[2], precision):
         for res in result:
@@ -268,7 +268,8 @@ def layered_by_k_means():
     for i in result:
         data.append(float(i[0]))
     layer = k_means_three(data)
-    print(layer)
+    for i in layer:
+        print(layer)
     sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
@@ -591,7 +592,12 @@ def OPTICS(same_data, Eps=0.003, MinPts=4):
         t_core = []
         for score in data:  # 找出核心点在Eps邻域中的点
             same_point = same_data[score]  # 有多少个相同点
-            if round(abs(core - score), 4) < Eps and abs(core - score) != 0:
+            # 包括自己包含边界
+            # if round(abs(core - score), 4) <= Eps:
+            # 官方计算方法
+            s = core - score
+            distance = math.sqrt(math.pow(s, 2))
+            if distance <= Eps:
                 tup = (score, round(abs(core - score), 3))
                 for i in range(same_point):
                     t_core.append(tup)
@@ -762,4 +768,5 @@ def test():
         count = count + 1
     wb.save('layer_test2.xlsx')
 
-Cluster_by_DBSCAN()
+
+layered_by_k_means()

@@ -1,6 +1,6 @@
 import numpy as np
 import pymysql
-from sklearn.cluster import DBSCAN
+from sklearn.cluster import DBSCAN,KMeans,OPTICS
 from sklearn import datasets
 import random
 import matplotlib.pyplot as plt
@@ -12,15 +12,16 @@ if __name__ == '__main__':
 
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
-    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321 order by score;'
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321 and score!=0 order by score;'
     cursor.execute(sql)
     result = cursor.fetchall()
     data = []
     for i in result:
         data.append((float(i[0]), 0))
-        # data.append(float(i[0]))
     arr = np.array(data)
-    cluster = DBSCAN(eps=0.002, min_samples=8).fit(arr)
+    # cluster = DBSCAN(eps=0.002, min_samples=8).fit(arr)
+    # cluster = KMeans(n_clusters=3).fit(arr)
+    cluster = OPTICS(min_samples=8, max_eps=0.002)
 
     result = []
     for i, j in zip(cluster.labels_, data):
