@@ -421,7 +421,7 @@ def without_z_layer():
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
 
 
-def DBSCAN(same_data, Eps=0.002, MinPts=8):
+def DBSCAN(same_data, Eps=0.0022, MinPts=8):
     class_list = []
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
@@ -762,4 +762,4 @@ def test():
         count = count + 1
     wb.save('layer_test2.xlsx')
 
-Cluster_by_OPTICS()
+Cluster_by_DBSCAN()

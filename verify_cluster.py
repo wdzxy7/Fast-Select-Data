@@ -18,9 +18,9 @@ if __name__ == '__main__':
     for i in result:
         data.append((float(i[0]), 0))
     arr = np.array(data)
-    cluster = DBSCAN(eps=0.002, min_samples=8).fit(arr)
+    # cluster = DBSCAN(eps=0.0022, min_samples=8).fit(arr)
     # cluster = KMeans(n_clusters=3).fit(arr)
-    # cluster = OPTICS(min_samples=8).fit(arr)
+    # cluster = OPTICS(min_samples=8, max_eps=0.0022).fit(arr)
     result = []
     for i, j in zip(cluster.labels_, data):
         tup = (i, j)
