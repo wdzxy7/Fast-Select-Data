@@ -1,7 +1,4 @@
-from decimal import Decimal
-import xlrd
 import matplotlib.pyplot as plt
-import networkx
 from pandas import DataFrame
 import pandas as pd
 
@@ -83,7 +80,7 @@ def draw_create_data():
     draw_picture1(df, distribution)
 
 
-def read_excel(file_path, sheet):
+def read_csv(file_path):
     data = pd.read_csv(file_path)
     df = DataFrame(data)
     return df
@@ -96,19 +93,17 @@ def change(x):
         return x
 
 
-def draw_unknown_data():
+def draw_unknown_data(data_type, table_sum):
     # plt.figure()
-    file_path = 'Clustering_accuracy.xlsx'
     df = DataFrame()
-    sheet_sum = 10
-    for i in range(1, sheet_sum + 1):
-        sheet = 'Sheet' + str(i)
-        data = read_excel(file_path, sheet)
+    for i in range(1, table_sum + 1):
+        file_path = data_type + '_Clustering_accuracy' + str(i) + '.csv'
+        data = read_csv(file_path)
         if i == 1:
             df = data
         else:
             df = df + data
-    df = df / sheet_sum
+    df = df / table_sum
     df['K-MEANS'] = df['K-MEANS'].apply(lambda x: change(x))
     df['avg_K-MEANS'] = df['avg_K-MEANS'].apply(lambda x: change(x))
     df['DBSCAN'] = df['DBSCAN'].apply(lambda x: change(x))
@@ -117,7 +112,6 @@ def draw_unknown_data():
     df['avg_OPTICS'] = df['avg_OPTICS'].apply(lambda x: change(x))
     df['RANDOM'] = df['RANDOM'].apply(lambda x: change(x))
     df['AVG'] = df['AVG'].apply(lambda x: change(x))
-    df = df.drop('sample_sum', axis=1)
     print(df)
     x_l = []
     for i in range(0, 30, 10):
@@ -132,8 +126,7 @@ def draw_air():
     sheet_sum = 10
     for i in range(1, 6):
         file_path = 'air_Clustering_accuracy' + str(i) + '.csv'
-        sheet = 'air_Clustering_accuracy' + str(i)
-        data = read_excel(file_path, sheet)
+        data = read_csv(file_path)
         if i == 1:
             df = data
         else:
@@ -141,4 +134,5 @@ def draw_air():
     print(df / 5)
 
 
-draw_air()
+table_sum = 5
+draw_unknown_data('incline', table_sum)

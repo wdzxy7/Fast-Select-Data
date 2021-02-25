@@ -1,10 +1,7 @@
-import time
 import pymysql
 from pandas import DataFrame
 from decimal import Decimal
-import pandas as pd
 import single_test as st
-from sqlalchemy import create_engine
 import sql_connect
 
 
@@ -161,32 +158,41 @@ def real_data_test(data_type):
     columns_list = ['K-MEANS', 'avg_K-MEANS', 'DBSCAN', 'avg_DBSCAN', 'OPTICS', 'avg_OPTICS', 'RANDOM', 'AVG']
     df = DataFrame(test_result, columns=columns_list)
     # df.index = ind
+    print(df)
     path = data_type + '_Clustering_accuracy' + str(write_count) + '.csv'
-    df.to_csv(path)
+    df.to_csv(path, index=False)
 
 
 if __name__ == '__main__':
+    # 查询数据sql
     select_data_sql = {
         'air': 'select value from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\'',
         'incline': 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     }
+    # 查询数据分布sql
     select_count_sql = {
         'air': 'select value, count(value) from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;',
         'incline': 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
     }
+    # 循环设置
     run_range = {
-        'air': [10000, 90001, 5000],
+        'air': [10000, 90001, 10000],
         'incline': [500, 15001, 500]
     }
+    # 设置Eps，MinPts
     parameter = {
         'air': [1, 15],
         'incline': [0.0022, 8]
     }
+    # 标准平均值
     stand_avg = {
         'incline': 0.000389,
         'air': 3.97103
     }
-    write_count = 10
-    for i in range(1):
-        real_data_test('incline')
+    # 写入文件编号
+    write_count = 1
+    # 测试次数
+    run_times = 5
+    for k in range(run_times):
+        real_data_test('air')
         write_count += 1
