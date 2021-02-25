@@ -5,6 +5,7 @@ from decimal import Decimal
 import pandas as pd
 import single_test as st
 from sqlalchemy import create_engine
+import sql_connect
 
 
 def create_data_test():
@@ -60,10 +61,15 @@ def avg_sampling(df, sample_sum, engine):
     store_df.to_sql('avg_result', con=engine, if_exists='append', index=False, chunksize=100000)
 
 
-def real_data_test():
+def real_data_test(data_type):
+    Eps = parameter[data_type][0]
+    MinPts = parameter[data_type][1]
+    sql_con = sql_connect.Sql_c()
+    '''
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
+    '''
     # 测试sql
     t_sql1 = 'select avg(score) from unknown_data.k_means_result;'
     t_sql2 = 'select avg(score) from unknown_data.avg_k_means_result;'
@@ -84,36 +90,29 @@ def real_data_test():
     sql7 = 'TRUNCATE TABLE unknown_data.k_means_result;'
     sql8 = 'TRUNCATE TABLE unknown_data.avg_k_means_result;'
     clear_sql = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8]
-    # incline data
-    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
-    # air data
-    # sql = 'select value, count(value) from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;'
-    cursor.execute(sql)
-    res = cursor.fetchall()
+    sql = select_count_sql[data_type]
+    sql_con.cursor.execute(sql)
+    res = sql_con.cursor.fetchall()
     same_data = {}
     for i in res:
         same_data[float(i[0])] = int(i[1])
-    print(same_data)
     # 聚类分层
     optics_layer = st.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
     dbscan_layer = st.DBSCAN(same_data, Eps=Eps, MinPts=MinPts)
     k_means_layer = st.k_means_three(list(same_data.keys()))
     print('DBSCAN:')
     for i in dbscan_layer:
-        print(i)
+        print(sorted(i))
     print('OPTICS:')
     for i in optics_layer:
-        print(i)
+        print(sorted(i))
     print('K-MEANS:')
     for i in k_means_layer:
-        print(i)
+        print(sorted(i))
     # 查询数据
-    # incline data
-    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
-    # air data
-    # sql = 'select value from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;'
-    cursor.execute(sql)
-    sql_result = cursor.fetchall()
+    sql = select_data_sql[data_type]
+    sql_con.cursor.execute(sql)
+    sql_result = sql_con.cursor.fetchall()
     data = DataFrame(sql_result, columns=['score']).astype('float')
     # 数据分层
     opdata, zero_data = st.spilt_data_by_layer(optics_layer, data)
@@ -121,38 +120,38 @@ def real_data_test():
     kmdata, zero_data = st.spilt_data_by_layer(k_means_layer, data)
     data_sum = len(sql_result)
     # 测试数据
-    stand = 0.000389
+    stand = stand_avg[data_type]
     test_result = []
     t_result = []
     ind = []
-    # incline data
-    for sample_sum in range(500, 15001, 500):
-    # air data
-    # for sample_sum in range(100, 400, 100):
+    start = run_range[data_type][0]
+    end = run_range[data_type][1]
+    pace = run_range[data_type][2]
+    for sample_sum in range(start, end, pace):
         ind.append(sample_sum)
         print(sample_sum)
         t_result.clear()
         # 清空数据表
         for sql in clear_sql:
-            cursor.execute(sql)
+            sql_con.cursor.execute(sql)
         # K-MEANS
-        st.sampling_data(engine, kmdata, data_sum, sample_sum, zero_data, 'k_means_result')
-        st.avg_sampling_data(engine, kmdata, data_sum, sample_sum, zero_data, 'avg_k_means_result')
+        st.sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, zero_data, 'k_means_result')
+        st.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, zero_data, 'avg_k_means_result')
         # DBSCAN
-        st.sampling_data(engine, dbdata, data_sum, sample_sum, zero_data, 'dbscan_result')
-        st.avg_sampling_data(engine, dbdata, data_sum, sample_sum, zero_data, 'avg_dbscan_result')
+        st.sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, zero_data, 'dbscan_result')
+        st.avg_sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, zero_data, 'avg_dbscan_result')
         # OPTICS
-        st.sampling_data(engine, opdata, data_sum, sample_sum, zero_data, 'optics_result')
-        st.avg_sampling_data(engine, opdata, data_sum, sample_sum, zero_data, 'avg_optics_result')
+        st.sampling_data(sql_con.engine, opdata, data_sum, sample_sum, zero_data, 'optics_result')
+        st.avg_sampling_data(sql_con.engine, opdata, data_sum, sample_sum, zero_data, 'avg_optics_result')
         # RANDOM
         df_sample = data.sample(frac=sample_sum / data_sum, replace=False, axis=0)
-        df_sample.to_sql('random_result', con=engine, if_exists='append', index=False, chunksize=100000)
+        df_sample.to_sql('random_result', con=sql_con.engine, if_exists='append', index=False, chunksize=100000)
         # AVG
-        avg_sampling(data, sample_sum, engine)
+        avg_sampling(data, sample_sum, sql_con.engine)
         # TEST: K-MEANS, DBSCAN, OPTICS, RANDOM, AVG
         for test in test_sql:
-            cursor.execute(test)
-            result = cursor.fetchall()
+            sql_con.cursor.execute(test)
+            result = sql_con.cursor.fetchall()
             avg = round(float(result[0][0]), 6)
             accuracy = round(abs(avg - stand) / stand * 100, 6)
             t_result.append(accuracy)
@@ -161,20 +160,33 @@ def real_data_test():
     # 存储结果
     columns_list = ['K-MEANS', 'avg_K-MEANS', 'DBSCAN', 'avg_DBSCAN', 'OPTICS', 'avg_OPTICS', 'RANDOM', 'AVG']
     df = DataFrame(test_result, columns=columns_list)
-    df.index = ind
-    print(df)
-    path = 'temp_Clustering_accuracy' + str(write_count) + '.csv'
+    # df.index = ind
+    path = data_type + '_Clustering_accuracy' + str(write_count) + '.csv'
     df.to_csv(path)
 
 
 if __name__ == '__main__':
-    # incline data
-    Eps = 0.0022
-    MinPts = 8
-    # air data
-    #Eps = 0.2
-    # MinPts = 60
+    select_data_sql = {
+        'air': 'select value from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\'',
+        'incline': 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    }
+    select_count_sql = {
+        'air': 'select value, count(value) from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;',
+        'incline': 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
+    }
+    run_range = {
+        'air': [10000, 90001, 5000],
+        'incline': [500, 15001, 500]
+    }
+    parameter = {
+        'air': [1, 15],
+        'incline': [0.0022, 8]
+    }
+    stand_avg = {
+        'incline': 0.000389,
+        'air': 3.97103
+    }
     write_count = 10
     for i in range(1):
-        real_data_test()
+        real_data_test('incline')
         write_count += 1

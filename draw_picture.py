@@ -84,7 +84,7 @@ def draw_create_data():
 
 
 def read_excel(file_path, sheet):
-    data = pd.read_excel(file_path, sheet_name=sheet)
+    data = pd.read_csv(file_path)
     df = DataFrame(data)
     return df
 
@@ -127,4 +127,18 @@ def draw_unknown_data():
     plt.show()
 
 
-draw_unknown_data()
+def draw_air():
+    df = DataFrame()
+    sheet_sum = 10
+    for i in range(1, 6):
+        file_path = 'air_Clustering_accuracy' + str(i) + '.csv'
+        sheet = 'air_Clustering_accuracy' + str(i)
+        data = read_excel(file_path, sheet)
+        if i == 1:
+            df = data
+        else:
+            df = df + data
+    print(df / 5)
+
+
+draw_air()

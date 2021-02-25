@@ -26,7 +26,8 @@ if __name__ == '__main__':
 
     t_data.clear()
     # sql = 'select score from unknown_data.data' + str(num) + ';'
-    sql = 'SELECT score FROM unknown_data.data3 WHERE `index`=21021002103010031321 ORDER BY score ASC;'
+    # sql = 'SELECT score FROM unknown_data.data3 WHERE `index`=21021002103010031321 ORDER BY score ASC;'
+    sql = 'SELECT `value` FROM unknown_data.air WHERE locationId=63094;'
     cursor.execute(sql)
     res = cursor.fetchall()
     print(res)
