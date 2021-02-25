@@ -85,23 +85,33 @@ def real_data_test():
     sql8 = 'TRUNCATE TABLE unknown_data.avg_k_means_result;'
     clear_sql = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8]
     # incline data
-    # sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
+    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
     # air data
-    sql = 'select value, count(value) from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;'
+    # sql = 'select value, count(value) from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;'
     cursor.execute(sql)
     res = cursor.fetchall()
     same_data = {}
     for i in res:
         same_data[float(i[0])] = int(i[1])
+    print(same_data)
     # 聚类分层
     optics_layer = st.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
     dbscan_layer = st.DBSCAN(same_data, Eps=Eps, MinPts=MinPts)
     k_means_layer = st.k_means_three(list(same_data.keys()))
+    print('DBSCAN:')
+    for i in dbscan_layer:
+        print(i)
+    print('OPTICS:')
+    for i in optics_layer:
+        print(i)
+    print('K-MEANS:')
+    for i in k_means_layer:
+        print(i)
     # 查询数据
     # incline data
-    # sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     # air data
-    sql = 'select value from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;'
+    # sql = 'select value from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
     data = DataFrame(sql_result, columns=['score']).astype('float')
@@ -116,9 +126,9 @@ def real_data_test():
     t_result = []
     ind = []
     # incline data
-    # for sample_sum in range(500, 15001, 500):
+    for sample_sum in range(500, 15001, 500):
     # air data
-    for sample_sum in range(100, 400, 100):
+    # for sample_sum in range(100, 400, 100):
         ind.append(sample_sum)
         print(sample_sum)
         t_result.clear()
@@ -153,14 +163,18 @@ def real_data_test():
     df = DataFrame(test_result, columns=columns_list)
     df.index = ind
     print(df)
-    df.to_csv('temp_Clustering_accuracy.csv')
+    path = 'temp_Clustering_accuracy' + str(write_count) + '.csv'
+    df.to_csv(path)
 
 
 if __name__ == '__main__':
     # incline data
-    Eps = 0.002
+    Eps = 0.0022
     MinPts = 8
     # air data
-    Eps = 0.2
-    MinPts = 60
-    real_data_test()
+    #Eps = 0.2
+    # MinPts = 60
+    write_count = 10
+    for i in range(1):
+        real_data_test()
+        write_count += 1

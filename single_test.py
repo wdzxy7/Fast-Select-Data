@@ -174,7 +174,7 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
             # print(df)
             # print(molecular, denominator, specimen)
             sam = 1
-        if sam < 0:
+        if sam < 0 or sam is np.nan:
             sam = 0
         df_sample = df.sample(frac=sam, replace=False, axis=0)
         # print(sam, len(df_sample))
@@ -447,10 +447,7 @@ def DBSCAN(same_data, Eps=0.0022, MinPts=8):
             f_core.add(core)
     ct_cores = y_core.keys()  # 核心点集
     ct_cores = list(set(ct_cores))
-    # print('core_data')
-    # print(sorted(ct_cores))
     # 聚类
-    print('Clustering')
     while len(ct_cores) != 0:
         core = ct_cores[0]
         del ct_cores[0]
@@ -470,12 +467,10 @@ def DBSCAN(same_data, Eps=0.0022, MinPts=8):
                     now_class.add(point)
         class_list.append(now_class)
         ct_cores = list(set(ct_cores) - now_class)
-    # print('包括自己包不含边界f_core:', sorted(list(f_core)))
     return class_list
 
 
 def Cluster_by_DBSCAN():
-    print('DBSCAN START')
     database = 'dbscan_result'
     sample_sum = 788
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
@@ -761,5 +756,3 @@ def test():
         datas = datas + 50
         count = count + 1
     wb.save('layer_test2.xlsx')
-
-Cluster_by_DBSCAN()
