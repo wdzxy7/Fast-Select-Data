@@ -11,16 +11,16 @@ from scipy.spatial.distance import squareform
 if __name__ == '__main__':
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
-    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321 and score!=0 order by score;'
+    sql = 'select value from unknown_data.t_air;'
     cursor.execute(sql)
     result = cursor.fetchall()
     data = []
     for i in result:
         data.append((float(i[0]), 0))
     arr = np.array(data)
-    cluster = DBSCAN(eps=0.0022, min_samples=8).fit(arr)
+    cluster = DBSCAN(eps=3, min_samples=200).fit(arr)
     # cluster = KMeans(n_clusters=3).fit(arr)
-    # cluster = OPTICS(min_samples=8, max_eps=0.0022).fit(arr)
+    # cluster = OPTICS(min_samples=7, max_eps=0.0022).fit(arr)
     result = []
     for i, j in zip(cluster.labels_, data):
         tup = (i, j)
@@ -85,8 +85,7 @@ def DBSCAN(X, eps, min_Pts):
             cluster[Cklist[i]] = k
         omega_list = omega_list - Ck
     return cluster
-'''
-'''
+    
 connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
 cursor = connect.cursor()
 sql = 'select score from unknown_data.data3 where `index`=22021001101410011321 and score>0.02 order by score;'

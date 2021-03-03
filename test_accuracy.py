@@ -44,7 +44,7 @@ def avg_sampling(df, sample_sum, engine):
     back = 0
     data_sum = len(df)
     max_range = front + data_sum - 1
-    hist = int(data_sum / sample_sum)
+    hist = round(data_sum / sample_sum)
     sam = 1 / hist
     store_df = DataFrame([], columns=['score']).astype('float')
     while front < max_range:
@@ -177,12 +177,12 @@ if __name__ == '__main__':
     # 循环设置
     run_range = {
         'air': [10000, 90001, 10000],
-        'incline': [500, 15001, 500]
+        'incline': [15000, 15001, 500]
     }
     # 设置Eps，MinPts
     parameter = {
         'air': [1, 15],
-        'incline': [0.0022, 8]
+        'incline': [0.0022, 7]
     }
     # 标准平均值
     stand_avg = {
@@ -190,9 +190,9 @@ if __name__ == '__main__':
         'air': 3.97103
     }
     # 写入文件编号
-    write_count = 1
+    write_count = 100
     # 测试次数
-    run_times = 5
+    run_times = 1
     for k in range(run_times):
-        real_data_test('air')
+        real_data_test('incline')
         write_count += 1
