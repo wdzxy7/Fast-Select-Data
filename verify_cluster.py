@@ -1,24 +1,31 @@
 import numpy as np
 import pymysql
 from sklearn.cluster import DBSCAN,KMeans,OPTICS
-import matplotlib.pyplot as plt
-import time
-import operator
-from scipy.spatial.distance import pdist
-from scipy.spatial.distance import squareform
+import single_test as st
 
 
 if __name__ == '__main__':
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
-    sql = 'select value from unknown_data.air where locationId=62256;'
+    sql = 'select value from unknown_data.air where locationId=63094;'
     cursor.execute(sql)
     result = cursor.fetchall()
     data = []
     for i in result:
         data.append((float(i[0]), 0))
     arr = np.array(data)
-    cluster = DBSCAN(eps=0.4, min_samples=9).fit(arr)
+    sql = 'select value, count(value) from unknown_data.air where locationId=63094 group by value;'
+    cursor.execute(sql)
+    res = cursor.fetchall()
+    same_data = {}
+    for i in res:
+        same_data[float(i[0])] = int(i[1])
+    dbscan_layer = st.DBSCAN(same_data, Eps=0.1001, MinPts=10)
+    print('DBSCAN:')
+    for i in dbscan_layer:
+        print(sorted(i))
+
+    cluster = DBSCAN(eps=0.4, min_samples=10).fit(arr)
     # cluster = KMeans(n_clusters=10).fit(arr)
     # cluster = OPTICS(min_samples=7, max_eps=0.0022).fit(arr)
     result = []

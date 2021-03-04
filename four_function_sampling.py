@@ -67,16 +67,6 @@ def cluster(data):
     k_means_layer = get_cluster(cluster, values)
     dbscan_layer = st.DBSCAN(same_data, Eps=0.4, MinPts=6)
     optics_layer = st.OPTICS(same_data, Eps=0.4, MinPts=6)
-
-    print('DBSCAN:')
-    for i in dbscan_layer:
-        print(sorted(i))
-    print('OPTICS:')
-    for i in optics_layer:
-        print(sorted(i))
-    print('K-MEANS:')
-    for i in k_means_layer:
-        print(sorted(i))
     opdata = cs.spilt_data_by_layer(optics_layer, data)
     dbdata = cs.spilt_data_by_layer(dbscan_layer, data)
     kmdata = cs.spilt_data_by_layer(k_means_layer, data)
@@ -105,25 +95,58 @@ def all_cluster(dbdata, opdata, kmdata):
     pass
 
 
-def group_cluster(data, dbscan_layer, optics_layer, k_means_layer):
-    sql1 = 'TRUNCATE TABLE unknown_data.all_dbscan_result;'
-    sql2 = 'TRUNCATE TABLE unknown_data.all_avg_dbscan_random;'
-    sql3 = 'TRUNCATE TABLE unknown_data.all_optics_random;'
-    sql4 = 'TRUNCATE TABLE unknown_data.all_avg_optics_random;'
-    sql5 = 'TRUNCATE TABLE unknown_data.all_k_means_random;'
-    sql6 = 'TRUNCATE TABLE unknown_data.all_avg_k_means_random;'
+def group_cluster(data):
+    sql1 = 'TRUNCATE TABLE unknown_data.group_dbscan_random;'
+    sql2 = 'TRUNCATE TABLE unknown_data.group_avg_dbscan_random;'
+    sql3 = 'TRUNCATE TABLE unknown_data.group_optics_random;'
+    sql4 = 'TRUNCATE TABLE unknown_data.group_avg_optics_random;'
+    sql5 = 'TRUNCATE TABLE unknown_data.group_k_means_random;'
+    sql6 = 'TRUNCATE TABLE unknown_data.group_avg_k_means_random;'
     clear_sql = [sql1, sql2, sql3, sql4, sql5, sql6]
     for clear in clear_sql:
         sql_con.cursor.execute(clear)
     parameter = {
-        '62256': [],
-        '63094': [],
-        '62880': [],
-        '62693': [],
-        '64704': [],
-        '66355': []
+        '62256': [0.2, 9],
+        '63094': [0.1001, 10],
     }
-    pass
+    sqls = {
+        '62256': 'select avg(value), count(value) from unknown_data.air where locationId=62256 group by value;',
+        '63094': 'select avg(value), count(value) from unknown_data.air where locationId=63094 group by value;'
+    }
+    for key in parameter.keys():
+        eps = parameter[key][0]
+        minpts = parameter[key][1]
+        sql = sqls[key]
+        sql_con.cursor.execute(sql)
+        sql_con.cursor.execute(sql)
+        res = sql_con.cursor.fetchall()
+        same_data = {}
+        for i in res:
+            same_data[float(i[0])] = int(i[1])
+        location_data = data.loc[data['locationId'] == key]
+        arr = location_data['value']
+        data_length = len(arr)
+        sample = sample_sum * (data_length / data_sum)
+        values = []
+        for i in arr:
+            values.append((i, 0))
+        arr = np.array(values)
+        cluster = KMeans(n_clusters=10).fit(arr)
+        k_means_layer = get_cluster(cluster, values)
+        dbscan_layer = st.DBSCAN(same_data, Eps=eps, MinPts=minpts)
+        optics_layer = st.OPTICS(same_data, Eps=eps, MinPts=minpts)
+        opdata = cs.spilt_data_by_layer(optics_layer, location_data)
+        dbdata = cs.spilt_data_by_layer(dbscan_layer, location_data)
+        kmdata = cs.spilt_data_by_layer(k_means_layer, location_data)
+        # K-MEANS
+        cs.sampling_all_data(sql_con.engine, kmdata, data_length, sample, 'group_k_means_random')
+        cs.avg_sampling_all_data(sql_con.engine, kmdata, data_length, sample, 'group_avg_k_means_random')
+        # DBSCAN
+        cs.sampling_all_data(sql_con.engine, dbdata, data_length, sample, 'group_dbscan_random')
+        cs.avg_sampling_all_data(sql_con.engine, dbdata, data_length, sample, 'group_avg_dbscan_random')
+        # OPTICS
+        cs.sampling_all_data(sql_con.engine, opdata, data_length, sample, 'group_optics_random')
+        cs.avg_sampling_all_data(sql_con.engine, opdata, data_length, sample, 'group_avg_optics_random')
 
 
 def get_cluster(cluster, data):
@@ -146,8 +169,8 @@ def get_cluster(cluster, data):
 
 
 def main():
-    # incline 62256 62880
-    sql = 'select * from unknown_data.air where locationId=62256 or locationId=62880 or ' \
+    # incline 62256 63094
+    sql = 'select * from unknown_data.air where locationId=62256 or locationId=63094 or ' \
           'locationId=64704 or locationId=62693;'
     sql_con.cursor.execute(sql)
     result = sql_con.cursor.fetchall()
@@ -155,16 +178,19 @@ def main():
                                       'unit', 'latitude', 'longitude', 'id'])
     data = data.drop(['id'], axis=1)
     data['value'] = data['value'].astype('float')
-    print(data)
-    all_random(data)
+    # all_random(data)
+    # group_random(data)
+    print('all_avg')
     all_avg_random(data)
-    group_random(data)
+    print('all_cluster')
     dbdata, opdata, kmdata = cluster(data)
     all_cluster(dbdata, opdata, kmdata)
+    print('group_cluster')
+    group_cluster(data)
 
 
 if __name__ == '__main__':
-    sample_sum = 9000
-    data_sum = 254788
+    sample_sum = 4461
+    data_sum = 251722
     sql_con = sql_connect.Sql_c()
     main()
