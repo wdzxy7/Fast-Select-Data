@@ -1,8 +1,9 @@
-import single_test as st
+import re
 import numpy as np
 import sql_connect
-import cluster_sampling as cs
+import single_test as st
 from pandas import DataFrame
+import cluster_sampling as cs
 from sklearn.cluster import KMeans
 
 
@@ -118,7 +119,6 @@ def group_cluster(data):
         minpts = parameter[key][1]
         sql = sqls[key]
         sql_con.cursor.execute(sql)
-        sql_con.cursor.execute(sql)
         res = sql_con.cursor.fetchall()
         same_data = {}
         for i in res:
@@ -189,8 +189,54 @@ def main():
     group_cluster(data)
 
 
+def get_error_rate():
+    t_sql1 = 'select avg(value), locationId from unknown_data.all_dbscan_random group by locationId;'
+    t_sql2 = 'select avg(value), locationId from unknown_data.all_avg_dbscan_random group by locationId;'
+    t_sql3 = 'select avg(value), locationId from unknown_data.all_optics_random group by locationId;'
+    t_sql4 = 'select avg(value), locationId from unknown_data.all_avg_optics_random group by locationId;'
+    t_sql5 = 'select avg(value), locationId from unknown_data.all_k_means_random group by locationId;'
+    t_sql6 = 'select avg(value), locationId from unknown_data.all_avg_k_means_random group by locationId;'
+    t_sql7 = 'select avg(value), locationId from unknown_data.group_dbscan_random group by locationId;'
+    t_sql8 = 'select avg(value), locationId from unknown_data.group_avg_dbscan_random group by locationId;'
+    t_sql9 = 'select avg(value), locationId from unknown_data.group_optics_random group by locationId;'
+    t_sql10 = 'select avg(value), locationId from unknown_data.group_avg_optics_random group by locationId;'
+    t_sql11 = 'select avg(value), locationId from unknown_data.group_k_means_random group by locationId;'
+    t_sql12 = 'select avg(value), locationId from unknown_data.group_avg_k_means_random group by locationId;'
+    t_sql13 = 'select avg(value), locationId from unknown_data.all_random group by locationId;'
+    t_sql14 = 'select avg(value), locationId from unknown_data.group_random group by locationId;'
+    t_sql15 = 'select avg(value), locationId from unknown_data.all_avg_random group by locationId;'
+    test_sql = [t_sql1, t_sql2, t_sql3, t_sql4, t_sql5, t_sql6, t_sql7, t_sql8, t_sql9, t_sql10, t_sql11, t_sql12, t_sql13, t_sql14, t_sql15]
+    return_dict = {}
+    res_dict = {}
+    for sql in test_sql:
+        sql_con.cursor.execute(sql)
+        result = sql_con.cursor.fetchall()
+        r = re.findall(r'from(.*?)group by', sql, re.IGNORECASE)
+        name = r[0].replace(' ', '')
+        name = name.split('.')
+        name = name[1]
+        print(name)
+
+        res_dict.clear()
+        for i in result:
+            stand = stand_res[i[1]]
+            error = abs(stand - float(i[0])) / stand * 100
+            res_dict[i[1]] = error
+        t = res_dict.copy()
+        return_dict[name] = t
+    for key in return_dict.keys():
+        print(key, return_dict[key])
+
+
 if __name__ == '__main__':
     sample_sum = 4461
     data_sum = 251722
     sql_con = sql_connect.Sql_c()
-    main()
+    sql = 'select locationId, avg(value) from unknown_data.air where locationId=62256 or locationId=63094  or locationId=62693 or locationId=64704 group by locationId;'
+    sql_con.cursor.execute(sql)
+    res = sql_con.cursor.fetchall()
+    stand_res = {}
+    for i in res:
+        stand_res[i[0]] = float(i[1])
+    # main()
+    get_error_rate()
