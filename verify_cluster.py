@@ -11,15 +11,15 @@ from scipy.spatial.distance import squareform
 if __name__ == '__main__':
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
-    sql = 'select value from unknown_data.t_air;'
+    sql = 'select value from unknown_data.air where locationId=62256;'
     cursor.execute(sql)
     result = cursor.fetchall()
     data = []
     for i in result:
         data.append((float(i[0]), 0))
     arr = np.array(data)
-    cluster = DBSCAN(eps=3, min_samples=200).fit(arr)
-    # cluster = KMeans(n_clusters=3).fit(arr)
+    cluster = DBSCAN(eps=0.4, min_samples=9).fit(arr)
+    # cluster = KMeans(n_clusters=10).fit(arr)
     # cluster = OPTICS(min_samples=7, max_eps=0.0022).fit(arr)
     result = []
     for i, j in zip(cluster.labels_, data):
@@ -34,7 +34,7 @@ if __name__ == '__main__':
             result_dict[i[0]] = []
             result_dict[i[0]].append(i[1][0])
     for key in result_dict:
-        print(key, sorted(result_dict[key])),
+        print(key, sorted(result_dict[key]))
 
 '''
 def find_neighbor(j, x, eps):

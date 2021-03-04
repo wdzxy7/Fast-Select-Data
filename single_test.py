@@ -140,18 +140,16 @@ def spilt_data_by_layer(layer, data_df):
     return_df = []
     temp_df = DataFrame()
     for lay in layer:
-        for score in lay:
-            specimen = data_df.loc[data_df['score'] == score, :]
-            temp_df = temp_df.append(specimen, ignore_index=True)
+        specimen = data_df.loc[(data_df['score'] <= max(lay)) & (data_df['score'] >= min(lay)), :]
+        temp_df = temp_df.append(specimen, ignore_index=True)
         t_df = temp_df.copy(deep=True)
         return_df.append(t_df)
         temp_df.drop(temp_df.index, inplace=True)
         temp_df.columns = ['score']
-    zero_data = data_df.loc[data_df['score'] == 0, :]
-    return return_df, zero_data
+    return return_df
 
 
-def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
+def sampling_data(engine, df_list, data_sum, sample_sum, database):
     denominator = 0
     lest = sample_sum
     molecular_list = []
@@ -181,23 +179,9 @@ def sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
         # print('-----------------------------------')
         lest = lest - len(df_sample)
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
-    # 抽取0项
-    '''
-    try:
-        sam = lest / len(zero_data)
-        # print(sam)
-        if sam > 1:
-            sam = 1
-        elif sam < 0:
-            sam = 0
-        df_sample = zero_data.sample(frac=sam, replace=False, axis=0)
-        df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
-    except:
-        pass
-    '''
 
 
-def avg_sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database):
+def avg_sampling_data(engine, df_list, data_sum, sample_sum, database):
     denominator = 0
     lest = sample_sum
     molecular_list = []
@@ -226,7 +210,7 @@ def avg_sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database
             sam = 1 / hist
             df_sample = DataFrame([], columns=['score']).astype('float')
             front = 0
-            back = 0
+            back = hist
             max_range = front + df_length - 1
             while front < max_range:
                 data = df.loc[front:back, :]
@@ -239,19 +223,6 @@ def avg_sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database
         lest = lest - len(df_sample)
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
     # 抽取0项
-    '''
-    try:
-        sam = lest / len(zero_data)
-        # print(sam)
-        if sam > 1:
-            sam = 1
-        elif sam < 0:
-            sam = 0
-        df_sample = zero_data.sample(frac=sam, replace=False, axis=0)
-        df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
-    except:
-        pass
-    '''
 
 
 def layered_by_k_means():
@@ -277,8 +248,8 @@ def layered_by_k_means():
     df = DataFrame(sql_result, columns=['score']).astype('float')
     data_sum = len(sql_result)
     # 取出每层的数据
-    df_list, zero_data = spilt_data_by_layer(layer, df)
-    sampling_data(engine, df_list, data_sum, sample_sum, zero_data,database)
+    df_list = spilt_data_by_layer(layer, df)
+    sampling_data(engine, df_list, data_sum, sample_sum,database)
 
 
 # 分为0，非0两层
@@ -311,8 +282,7 @@ def two_layer():
         fz_df = fz_df.append(specimen, ignore_index=True)
     fz_df.columns = ['score']
     df_list = [z_df, fz_df]
-    zero_data = DataFrame()
-    sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database)
+    sampling_data(engine, df_list, data_sum, sample_sum, database)
 
 
 # 从非0数据项直接抽取

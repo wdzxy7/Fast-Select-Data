@@ -112,9 +112,9 @@ def real_data_test(data_type):
     sql_result = sql_con.cursor.fetchall()
     data = DataFrame(sql_result, columns=['score']).astype('float')
     # 数据分层
-    opdata, zero_data = st.spilt_data_by_layer(optics_layer, data)
-    dbdata, zero_data = st.spilt_data_by_layer(dbscan_layer, data)
-    kmdata, zero_data = st.spilt_data_by_layer(k_means_layer, data)
+    opdata = st.spilt_data_by_layer(optics_layer, data)
+    dbdata = st.spilt_data_by_layer(dbscan_layer, data)
+    kmdata = st.spilt_data_by_layer(k_means_layer, data)
     data_sum = len(sql_result)
     # 测试数据
     stand = stand_avg[data_type]
@@ -132,14 +132,14 @@ def real_data_test(data_type):
         for sql in clear_sql:
             sql_con.cursor.execute(sql)
         # K-MEANS
-        st.sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, zero_data, 'k_means_result')
-        st.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, zero_data, 'avg_k_means_result')
+        st.sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'k_means_result')
+        st.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_k_means_result')
         # DBSCAN
-        st.sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, zero_data, 'dbscan_result')
-        st.avg_sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, zero_data, 'avg_dbscan_result')
+        st.sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'dbscan_result')
+        st.avg_sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'avg_dbscan_result')
         # OPTICS
-        st.sampling_data(sql_con.engine, opdata, data_sum, sample_sum, zero_data, 'optics_result')
-        st.avg_sampling_data(sql_con.engine, opdata, data_sum, sample_sum, zero_data, 'avg_optics_result')
+        st.sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'optics_result')
+        st.avg_sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'avg_optics_result')
         # RANDOM
         df_sample = data.sample(frac=sample_sum / data_sum, replace=False, axis=0)
         df_sample.to_sql('random_result', con=sql_con.engine, if_exists='append', index=False, chunksize=100000)
@@ -167,32 +167,39 @@ if __name__ == '__main__':
     # 查询数据sql
     select_data_sql = {
         'air': 'select value from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\'',
-        'incline': 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+        'incline': 'select score from unknown_data.data3 where `index`=22021001101410011321;',
+        'air_incline': 'select value from unknown_data.air where locationId=62256 or locationId=62880 or '
+                       'locationId=63189 or locationId=63327 or locationId=63254 or locationId=64518;'
     }
     # 查询数据分布sql
     select_count_sql = {
         'air': 'select value, count(value) from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;',
-        'incline': 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
+        'incline': 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;',
+        'air_incline': 'select value, count(value) from unknown_data.air where locationId=62256 or locationId=62880'
+                       ' or locationId=63189 or locationId=63327 or locationId=63254 or locationId=64518 group by value;'
     }
     # 循环设置
     run_range = {
         'air': [10000, 90001, 10000],
-        'incline': [15000, 15001, 500]
+        'incline': [15000, 15001, 500],
+        'air_incline': [1500, 4500, 1000]
     }
     # 设置Eps，MinPts
     parameter = {
         'air': [1, 15],
-        'incline': [0.0022, 7]
+        'incline': [0.0022, 7],
+        'air_incline': [0.4, 9]
     }
     # 标准平均值
     stand_avg = {
         'incline': 0.000389,
-        'air': 3.97103
+        'air': 3.97103,
+        'air_incline': 2.1322394
     }
     # 写入文件编号
-    write_count = 100
+    write_count = 1
     # 测试次数
     run_times = 1
     for k in range(run_times):
-        real_data_test('incline')
+        real_data_test('air_incline')
         write_count += 1
