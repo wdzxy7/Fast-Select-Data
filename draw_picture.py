@@ -112,6 +112,7 @@ def draw_unknown_data(data_type, table_sum):
     df['avg_OPTICS'] = df['avg_OPTICS'].apply(lambda x: change(x))
     df['RANDOM'] = df['RANDOM'].apply(lambda x: change(x))
     df['AVG'] = df['AVG'].apply(lambda x: change(x))
+    df.drop(['K-MEANS', 'avg_K-MEANS'], axis=1, inplace=True)
     print(df)
     x_l = []
     for i in range(0, 30, 10):
@@ -134,5 +135,5 @@ def draw_air():
     print(df / 5)
 
 
-table_sum = 5
-draw_unknown_data('incline', table_sum)
+table_sum = 20
+draw_unknown_data('air_incline', table_sum)

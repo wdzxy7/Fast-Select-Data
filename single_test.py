@@ -166,7 +166,10 @@ def sampling_data(engine, df_list, data_sum, sample_sum, database):
         molecular_list.append(molecular)
     # 利用公式计算出每层抽取样本数量进行抽样
     for molecular, df in zip(molecular_list, df_list):
-        specimen = molecular / denominator
+        try:
+            specimen = molecular / denominator
+        except:
+            specimen = sample_sum * len(df) / data_sum
         sam = float(specimen) / len(df)
         if sam > 1:
             # print(df)
@@ -206,7 +209,12 @@ def avg_sampling_data(engine, df_list, data_sum, sample_sum, database):
             sam = 1
             df_sample = df.sample(frac=sam, replace=False, axis=0)
         else:
-            hist = round(df_length / specimen)
+            try:
+                hist = round(df_length / specimen)
+            except:
+                hist = round(sample_sum * (df_length / data_sum))
+                if hist == 0:
+                    hist = 1
             sam = 1 / hist
             df_sample = DataFrame([], columns=['score']).astype('float')
             front = 0

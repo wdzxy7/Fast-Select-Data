@@ -62,11 +62,6 @@ def real_data_test(data_type):
     Eps = parameter[data_type][0]
     MinPts = parameter[data_type][1]
     sql_con = sql_connect.Sql_c()
-    '''
-    engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
-    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
-    cursor = connect.cursor()
-    '''
     # 测试sql
     t_sql1 = 'select avg(score) from unknown_data.k_means_result;'
     t_sql2 = 'select avg(score) from unknown_data.avg_k_means_result;'
@@ -168,38 +163,36 @@ if __name__ == '__main__':
     select_data_sql = {
         'air': 'select value from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\'',
         'incline': 'select score from unknown_data.data3 where `index`=22021001101410011321;',
-        'air_incline': 'select value from unknown_data.air where locationId=62256 or locationId=62880 or '
-                       'locationId=63189 or locationId=63327 or locationId=63254 or locationId=64518;'
+        'air_incline': 'select value from unknown_data.air where locationId=63094;'
     }
     # 查询数据分布sql
     select_count_sql = {
         'air': 'select value, count(value) from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;',
         'incline': 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;',
-        'air_incline': 'select value, count(value) from unknown_data.air where locationId=62256 or locationId=62880'
-                       ' or locationId=63189 or locationId=63327 or locationId=63254 or locationId=64518 group by value;'
+        'air_incline': 'select value, count(value) from unknown_data.air where locationId=63094 group by value;'
     }
     # 循环设置
     run_range = {
         'air': [10000, 90001, 10000],
         'incline': [15000, 15001, 500],
-        'air_incline': [1500, 4500, 1000]
+        'air_incline': [2000, 8000, 1000]
     }
     # 设置Eps，MinPts
     parameter = {
         'air': [1, 15],
         'incline': [0.0022, 7],
-        'air_incline': [0.4, 9]
+        'air_incline': [0.101, 10]
     }
     # 标准平均值
     stand_avg = {
         'incline': 0.000389,
         'air': 3.97103,
-        'air_incline': 2.1322394
+        'air_incline': 0.0177754
     }
     # 写入文件编号
     write_count = 1
     # 测试次数
-    run_times = 1
+    run_times = 10
     for k in range(run_times):
         real_data_test('air_incline')
         write_count += 1

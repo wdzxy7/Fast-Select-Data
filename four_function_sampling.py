@@ -3,6 +3,7 @@ import numpy as np
 import sql_connect
 import single_test as st
 from pandas import DataFrame
+from openpyxl import Workbook
 import cluster_sampling as cs
 from sklearn.cluster import KMeans
 
@@ -38,7 +39,6 @@ def group_random(data):
     sql_con.cursor.execute('TRUNCATE TABLE unknown_data.group_random;')
     locations = data['locationId']
     locations = list(set(locations))
-    print(locations)
     store_df = DataFrame([], columns=['locationId', 'location', 'city', 'country', 'utc', 'local', 'parameter', 'value',
                                       'unit', 'latitude', 'longitude'])
     for locationid in locations:
@@ -93,7 +93,6 @@ def all_cluster(dbdata, opdata, kmdata):
     # OPTICS
     cs.sampling_all_data(sql_con.engine, opdata, data_sum, sample_sum, 'all_optics_random')
     cs.avg_sampling_all_data(sql_con.engine, opdata, data_sum, sample_sum, 'all_avg_optics_random')
-    pass
 
 
 def group_cluster(data):
@@ -168,27 +167,6 @@ def get_cluster(cluster, data):
     return result
 
 
-def main():
-    # incline 62256 63094
-    sql = 'select * from unknown_data.air where locationId=62256 or locationId=63094 or ' \
-          'locationId=64704 or locationId=62693;'
-    sql_con.cursor.execute(sql)
-    result = sql_con.cursor.fetchall()
-    data = DataFrame(result, columns=['locationId', 'location', 'city', 'country', 'utc', 'local', 'parameter', 'value',
-                                      'unit', 'latitude', 'longitude', 'id'])
-    data = data.drop(['id'], axis=1)
-    data['value'] = data['value'].astype('float')
-    # all_random(data)
-    # group_random(data)
-    print('all_avg')
-    all_avg_random(data)
-    print('all_cluster')
-    dbdata, opdata, kmdata = cluster(data)
-    all_cluster(dbdata, opdata, kmdata)
-    print('group_cluster')
-    group_cluster(data)
-
-
 def get_error_rate():
     t_sql1 = 'select avg(value), locationId from unknown_data.all_dbscan_random group by locationId;'
     t_sql2 = 'select avg(value), locationId from unknown_data.all_avg_dbscan_random group by locationId;'
@@ -215,8 +193,6 @@ def get_error_rate():
         name = r[0].replace(' ', '')
         name = name.split('.')
         name = name[1]
-        print(name)
-
         res_dict.clear()
         for i in result:
             stand = stand_res[i[1]]
@@ -224,12 +200,58 @@ def get_error_rate():
             res_dict[i[1]] = error
         t = res_dict.copy()
         return_dict[name] = t
-    for key in return_dict.keys():
-        print(key, return_dict[key])
+    return return_dict
+
+
+def write():
+    wb = Workbook()
+    excel = wb.active
+    temp = res_dict['all_random']
+    count = 2
+    index = []
+    for key in temp.keys():
+        excel['A' + str(count)] = key
+        index.append(key)
+        count = count + 1
+    place = 'B'
+    for key in res_dict.keys():
+        count = 1
+        excel[place + str(count)] = key
+        count = count + 1
+        for i in index:
+            try:
+                excel[place + str(count)] = res_dict[key][i]
+            except:
+                excel[place + str(count)] = 0
+            count = count + 1
+        next_place = ord(place) + 1
+        place = chr(next_place)
+    wb.save('air_result.xlsx')
+
+
+def main():
+    # incline 62256 63094
+    sql = 'select * from unknown_data.air where locationId=62256 or locationId=63094 or ' \
+          'locationId=64704 or locationId=62693;'
+    sql_con.cursor.execute(sql)
+    result = sql_con.cursor.fetchall()
+    data = DataFrame(result, columns=['locationId', 'location', 'city', 'country', 'utc', 'local', 'parameter', 'value',
+                                      'unit', 'latitude', 'longitude', 'id'])
+    data = data.drop(['id'], axis=1)
+    data['value'] = data['value'].astype('float')
+    all_random(data)
+    group_random(data)
+    print('all_avg')
+    all_avg_random(data)
+    print('all_cluster')
+    dbdata, opdata, kmdata = cluster(data)
+    all_cluster(dbdata, opdata, kmdata)
+    print('group_cluster')
+    group_cluster(data)
 
 
 if __name__ == '__main__':
-    sample_sum = 4461
+    sample_sum = 8000 # 4461
     data_sum = 251722
     sql_con = sql_connect.Sql_c()
     sql = 'select locationId, avg(value) from unknown_data.air where locationId=62256 or locationId=63094  or locationId=62693 or locationId=64704 group by locationId;'
@@ -238,5 +260,6 @@ if __name__ == '__main__':
     stand_res = {}
     for i in res:
         stand_res[i[0]] = float(i[1])
-    # main()
-    get_error_rate()
+    main()
+    res_dict = get_error_rate()
+    write()

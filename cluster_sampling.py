@@ -81,7 +81,12 @@ def avg_sampling_all_data(engine, df_list, data_sum, sample_sum, database):
             sam = 1
             df_sample = df.sample(frac=sam, replace=False, axis=0)
         else:
-            hist = round(df_length / specimen)
+            try:
+                hist = round(df_length / specimen)
+            except:
+                hist = round(sample_sum * (df_length / data_sum))
+                if hist == 0:
+                    hist = 1
             sam = 1 / hist
             df_sample = DataFrame([], columns=['locationId', 'location', 'city', 'country', 'utc', 'local', 'parameter',
                                                'value', 'unit', 'latitude', 'longitude'])
