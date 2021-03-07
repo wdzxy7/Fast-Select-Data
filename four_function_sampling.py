@@ -226,7 +226,8 @@ def write():
             count = count + 1
         next_place = ord(place) + 1
         place = chr(next_place)
-    wb.save('air_result.xlsx')
+    save_name = 'air_result' + str(write_count) + '.xlsx'
+    wb.save(save_name)
 
 
 def main():
@@ -260,6 +261,9 @@ if __name__ == '__main__':
     stand_res = {}
     for i in res:
         stand_res[i[0]] = float(i[1])
-    main()
-    res_dict = get_error_rate()
-    write()
+    write_count = 1
+    for i in range(10):
+        main()
+        res_dict = get_error_rate()
+        write()
+        write_count += 1
