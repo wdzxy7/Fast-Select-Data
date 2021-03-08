@@ -174,7 +174,7 @@ if __name__ == '__main__':
     # 循环设置
     run_range = {
         'air': [10000, 90001, 10000],
-        'incline': [15000, 15001, 500],
+        'incline': [1000, 15001, 1000],
         'air_incline': [2000, 8000, 1000]
     }
     # 设置Eps，MinPts
@@ -194,5 +194,5 @@ if __name__ == '__main__':
     # 测试次数
     run_times = 10
     for k in range(run_times):
-        real_data_test('air_incline')
+        real_data_test('air')
         write_count += 1

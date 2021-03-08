@@ -175,7 +175,9 @@ def sampling_data(engine, df_list, data_sum, sample_sum, database):
             # print(df)
             # print(molecular, denominator, specimen)
             sam = 1
-        if sam < 0 or sam is np.nan:
+        if sam < 0:
+            sam = 0
+        if sam is np.nan:
             sam = 0
         df_sample = df.sample(frac=sam, replace=False, axis=0)
         # print(sam, len(df_sample))
