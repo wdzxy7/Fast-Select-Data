@@ -1,12 +1,5 @@
-import time
 import numpy as np
-import math
-import random
-import pymysql
-from decimal import Decimal
 from pandas import DataFrame
-from openpyxl import Workbook
-from sqlalchemy import create_engine
 
 
 def spilt_data_by_layer(layer, data_df):

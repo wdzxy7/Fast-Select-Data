@@ -2,6 +2,7 @@ import single_test as st
 import sql_connect
 
 
+# 测试eps 和 minpts取值
 if __name__ == '__main__':
     eps = 0.1
     minpts = 10

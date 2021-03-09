@@ -1,6 +1,8 @@
 import pymysql
 from sqlalchemy import create_engine
 
+# 数据库连接类
+
 
 class Sql_c:
     def __init__(self):

@@ -149,6 +149,7 @@ def spilt_data_by_layer(layer, data_df):
     return return_df
 
 
+# 根据聚类结果进行分层随机抽样，每层抽样数量按公式分配，并存入数据库
 def sampling_data(engine, df_list, data_sum, sample_sum, database):
     denominator = 0
     lest = sample_sum
@@ -172,17 +173,12 @@ def sampling_data(engine, df_list, data_sum, sample_sum, database):
             specimen = sample_sum * len(df) / data_sum
         sam = float(specimen) / len(df)
         if sam > 1:
-            # print(df)
-            # print(molecular, denominator, specimen)
             sam = 1
         if sam < 0:
             sam = 0
         if sam is np.nan:
             sam = 0
         df_sample = df.sample(frac=sam, replace=False, axis=0)
-        # print(sam, len(df_sample))
-        # print('-----------------------------------')
-        lest = lest - len(df_sample)
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
 
 
@@ -235,12 +231,14 @@ def avg_sampling_data(engine, df_list, data_sum, sample_sum, database):
     # 抽取0项
 
 
+# 使用k-means抽样
 def layered_by_k_means():
     sample_sum = 788
     database = 'dbscan_result'
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
+    # 数据查询
     sql = 'TRUNCATE TABLE unknown_data.small_test;'
     cursor.execute(sql)
     sql = 'select distinct score from unknown_data.data3 where `index`=22021001101410011321;'
@@ -249,6 +247,7 @@ def layered_by_k_means():
     data = []
     for i in result:
         data.append(float(i[0]))
+    # 聚类
     layer = k_means_three(data)
     for i in layer:
         print(layer)
@@ -257,7 +256,7 @@ def layered_by_k_means():
     sql_result = cursor.fetchall()
     df = DataFrame(sql_result, columns=['score']).astype('float')
     data_sum = len(sql_result)
-    # 取出每层的数据
+    # 取出每层的数据抽样
     df_list = spilt_data_by_layer(layer, df)
     sampling_data(engine, df_list, data_sum, sample_sum,database)
 
@@ -401,6 +400,39 @@ def without_z_layer():
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
 
 
+# DBSCAN聚类抽样
+def Cluster_by_DBSCAN():
+    database = 'dbscan_result'
+    sample_sum = 788
+    engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
+    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+    cursor = connect.cursor()
+    # 数据查询
+    sql = 'TRUNCATE TABLE unknown_data.dbscan_result;'
+    cursor.execute(sql)
+    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
+    cursor.execute(sql)
+    res = cursor.fetchall()
+    same_data = {}
+    for i in res:
+        if float(i[0]) == 0:
+            continue
+        same_data[float(i[0])] = int(i[1])
+    # 聚类
+    layer = DBSCAN(same_data)
+    for i in layer:
+        print(i)
+    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    cursor.execute(sql)
+    sql_result = cursor.fetchall()
+    df = DataFrame(sql_result, columns=['score']).astype('float')
+    df_list, zero_data = spilt_data_by_layer(layer, df)
+    data_sum = len(sql_result)
+    # 抽样
+    sampling_data(engine, df_list, data_sum, sample_sum, database)
+
+
+# DBSCA算法
 def DBSCAN(same_data, Eps=0.0022, MinPts=8):
     class_list = []
     f_core = set()  # 存放不是核心点
@@ -450,13 +482,15 @@ def DBSCAN(same_data, Eps=0.0022, MinPts=8):
     return class_list
 
 
-def Cluster_by_DBSCAN():
-    database = 'dbscan_result'
+# OPTICS聚类 抽样
+def Cluster_by_OPTICS():
+    print('OPTICS START')
     sample_sum = 788
+    database = 'optics_result'
     engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
-    sql = 'TRUNCATE TABLE unknown_data.dbscan_result;'
+    sql = 'TRUNCATE TABLE unknown_data.optics_result;'
     cursor.execute(sql)
     sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
     cursor.execute(sql)
@@ -466,92 +500,19 @@ def Cluster_by_DBSCAN():
         if float(i[0]) == 0:
             continue
         same_data[float(i[0])] = int(i[1])
-    layer = DBSCAN(same_data)
+    layer = OPTICS(same_data)
     for i in layer:
-        print(i)
+        print(sorted(i))
     sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
     cursor.execute(sql)
     sql_result = cursor.fetchall()
     df = DataFrame(sql_result, columns=['score']).astype('float')
     df_list, zero_data = spilt_data_by_layer(layer, df)
     data_sum = len(sql_result)
-    sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database)
+    sampling_data(engine, df_list, data_sum, sample_sum, database)
 
 
-def get_tup_index(lis):
-    ind = []
-    for i in lis:
-        ind.append(i[0])
-    return ind
-
-
-def get_core_distance(core_points, MinPts):
-    core_distance = {}
-    for key in core_points.keys():
-        t = sorted(core_points[key], key=lambda x: x[1])
-        core_distance[key] = t[MinPts - 1][1]  # 核心距离那个点
-    return core_distance
-
-
-def get_reach_distance(core_points, cdistance):
-    reach_distance = {}
-    distance_list = []
-    for key in core_points.keys():
-        cd = cdistance[key]
-        distance_list.clear()
-        for i in core_points[key]:
-            if cd > i[1]:
-                distance_list.append(cd)
-            else:
-                distance_list.append(i[1])
-        reach_distance[key] = min(distance_list)
-    return reach_distance
-
-
-def insert_point(result_list, sorted_list, point_friends, core_d, list_ind, reach_distance):
-    for p in point_friends:
-        if p[0] not in result_list:
-            rd = max(core_d, p[1])
-            # 修改可达距离
-            try:
-                pre_rd = reach_distance[p[0]]
-                if rd < pre_rd:
-                    reach_distance[p[0]] = rd
-            except:
-                reach_distance[p[0]] = rd
-            # 插入队列操作
-            try:
-                k = list_ind.index(p[0])
-                distance = sorted_list[k][1]
-                if distance > rd:  # 新距离小替换
-                    sorted_list[k] = (p[0], rd)
-            except:
-                sorted_list.append((p[0], rd))
-
-
-def OPTICS_Cluster(result, reach_distance, core_distance, Eps):
-    layer = []
-    t_list = []
-    t_Eps = Eps * 1
-    for point in result:
-        rd = reach_distance[point]
-        cd = core_distance[point]
-        if (rd > t_Eps) or (rd == 9999):
-            # 形成新类
-            if (cd != 9999) and (cd <= t_Eps):
-                t = t_list.copy()
-                layer.append(t)
-                t_list.clear()
-                t_list.append(point)
-        # 加入当前类
-        else:
-            t_list.append(point)
-    t = t_list.copy()
-    layer.append(t)
-    del layer[0]
-    return layer
-
-
+# OPTICS算法
 def OPTICS(same_data, Eps=0.002, MinPts=8):
     f_core = set()  # 存放不是核心点
     y_core = {}  # 存放是核心点
@@ -627,33 +588,83 @@ def OPTICS(same_data, Eps=0.002, MinPts=8):
     return layer
 
 
-def Cluster_by_OPTICS():
-    print('OPTICS START')
-    sample_sum = 788
-    database = 'optics_result'
-    engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
-    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
-    cursor = connect.cursor()
-    sql = 'TRUNCATE TABLE unknown_data.optics_result;'
-    cursor.execute(sql)
-    sql = 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;'
-    cursor.execute(sql)
-    res = cursor.fetchall()
-    same_data = {}
-    for i in res:
-        if float(i[0]) == 0:
-            continue
-        same_data[float(i[0])] = int(i[1])
-    layer = OPTICS(same_data)
-    for i in layer:
-        print(sorted(i))
-    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
-    cursor.execute(sql)
-    sql_result = cursor.fetchall()
-    df = DataFrame(sql_result, columns=['score']).astype('float')
-    df_list, zero_data = spilt_data_by_layer(layer, df)
-    data_sum = len(sql_result)
-    sampling_data(engine, df_list, data_sum, sample_sum, zero_data, database)
+# 计算核心距离
+def get_core_distance(core_points, MinPts):
+    core_distance = {}
+    for key in core_points.keys():
+        t = sorted(core_points[key], key=lambda x: x[1])
+        core_distance[key] = t[MinPts - 1][1]  # 核心距离那个点
+    return core_distance
+
+
+# 计算可达距离
+def get_reach_distance(core_points, cdistance):
+    reach_distance = {}
+    distance_list = []
+    for key in core_points.keys():
+        cd = cdistance[key]
+        distance_list.clear()
+        for i in core_points[key]:
+            if cd > i[1]:
+                distance_list.append(cd)
+            else:
+                distance_list.append(i[1])
+        reach_distance[key] = min(distance_list)
+    return reach_distance
+
+
+# 获取插入节点列表各个节点的坐标
+def get_tup_index(lis):
+    ind = []
+    for i in lis:
+        ind.append(i[0])
+    return ind
+
+
+# OPTICS 算法中节点的插入
+def insert_point(result_list, sorted_list, point_friends, core_d, list_ind, reach_distance):
+    for p in point_friends:
+        if p[0] not in result_list:
+            rd = max(core_d, p[1])
+            # 修改可达距离
+            try:
+                pre_rd = reach_distance[p[0]]
+                if rd < pre_rd:
+                    reach_distance[p[0]] = rd
+            except:
+                reach_distance[p[0]] = rd
+            # 插入队列操作
+            try:
+                k = list_ind.index(p[0])
+                distance = sorted_list[k][1]
+                if distance > rd:  # 新距离小替换
+                    sorted_list[k] = (p[0], rd)
+            except:
+                sorted_list.append((p[0], rd))
+
+
+# OPTICS聚类运算
+def OPTICS_Cluster(result, reach_distance, core_distance, Eps):
+    layer = []
+    t_list = []
+    t_Eps = Eps * 1
+    for point in result:
+        rd = reach_distance[point]
+        cd = core_distance[point]
+        if (rd > t_Eps) or (rd == 9999):
+            # 形成新类
+            if (cd != 9999) and (cd <= t_Eps):
+                t = t_list.copy()
+                layer.append(t)
+                t_list.clear()
+                t_list.append(point)
+        # 加入当前类
+        else:
+            t_list.append(point)
+    t = t_list.copy()
+    layer.append(t)
+    del layer[0]
+    return layer
 
 
 def sample_by_rate(engine, df_list, data_sum, sample_sum, zero_data):

@@ -1,11 +1,6 @@
-from decimal import Decimal
 import pymysql
-from pandas import Series, DataFrame
-import time
+from pandas import DataFrame
 from sqlalchemy import create_engine
-import pandas as pd
-from pandas.api.types import CategoricalDtype
-import fsspec
 
 
 if __name__ == '__main__':

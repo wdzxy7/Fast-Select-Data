@@ -1,10 +1,5 @@
-import pymysql
-from pandas import DataFrame
-from decimal import Decimal
-import pandas as pd
-import random
-import xlrd
 import time
+import pymysql
 from openpyxl import Workbook
 
 

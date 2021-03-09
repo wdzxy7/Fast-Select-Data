@@ -3,6 +3,8 @@ import pylab as pl
 import pymysql
 import numpy as np
 
+
+# 查询数据绘制数据分布直方图，确定数据大致分布类型，倾斜情况
 if __name__ == '__main__':
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()

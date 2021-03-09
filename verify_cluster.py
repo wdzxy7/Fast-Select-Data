@@ -3,6 +3,7 @@ import pymysql
 from sklearn.cluster import DBSCAN,KMeans,OPTICS
 import single_test as st
 
+# 调用官方库验证自卸算法是否正确
 
 if __name__ == '__main__':
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')

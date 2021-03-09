@@ -86,6 +86,7 @@ def read_csv(file_path):
     return df
 
 
+# 把100以上数据，强制转化为100
 def change(x):
     if x > 100:
         return 100
@@ -96,6 +97,7 @@ def change(x):
 def draw_unknown_data(data_type, table_sum):
     # plt.figure()
     df = DataFrame()
+    # 读取csv文件
     for i in range(1, table_sum + 1):
         file_path = data_type + '_Clustering_accuracy' + str(i) + '.csv'
         data = read_csv(file_path)
@@ -104,6 +106,7 @@ def draw_unknown_data(data_type, table_sum):
         else:
             df = df + data
     df = df / table_sum
+    # 便于画图把误差超过100的规定为100 使用change函数
     df['K-MEANS'] = df['K-MEANS'].apply(lambda x: change(x))
     df['avg_K-MEANS'] = df['avg_K-MEANS'].apply(lambda x: change(x))
     df['DBSCAN'] = df['DBSCAN'].apply(lambda x: change(x))
@@ -112,13 +115,11 @@ def draw_unknown_data(data_type, table_sum):
     df['avg_OPTICS'] = df['avg_OPTICS'].apply(lambda x: change(x))
     df['RANDOM'] = df['RANDOM'].apply(lambda x: change(x))
     df['AVG'] = df['AVG'].apply(lambda x: change(x))
-    df.drop(['K-MEANS', 'avg_K-MEANS'], axis=1, inplace=True)
+    # 删除掉表现过于糟糕的k-means
+    df.drop(['K-MEANS', 'avg_K-MEANS', 'avg_DBSCAN', 'avg_OPTICS'], axis=1, inplace=True)
+
     print(df)
-    x_l = []
-    for i in range(0, 30, 10):
-        x_l.append(i)
-    t = df.plot(figsize=(20, 8))
-    t.set_xticks(x_l)
+    df.plot(figsize=(20, 8))
     plt.show()
 
 
@@ -135,5 +136,5 @@ def draw_air():
     print(df / 5)
 
 
-table_sum = 20
-draw_unknown_data('air_incline', table_sum)
+table_sum = 10
+draw_unknown_data('incline', table_sum)

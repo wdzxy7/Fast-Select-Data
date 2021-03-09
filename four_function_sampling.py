@@ -1,13 +1,14 @@
 import re
 import numpy as np
-import sql_connect
-import single_test as st
+import sql_connect  # 自写库sql连接
+import single_test as st  # 自写库
 from pandas import DataFrame
 from openpyxl import Workbook
-import cluster_sampling as cs
+import cluster_sampling as cs  # 自写库
 from sklearn.cluster import KMeans
 
 
+# 直接随机抽样
 def all_random(data):
     sql_con.cursor.execute('TRUNCATE TABLE unknown_data.all_random;')
     df_sample = data.sample(frac=sample_sum / data_sum, replace=False, axis=0)
@@ -35,12 +36,14 @@ def all_avg_random(data):
     store_df.to_sql('all_avg_random', con=sql_con.engine, if_exists='append', index=False, chunksize=100000)
 
 
+# 先分组然后随机抽样
 def group_random(data):
     sql_con.cursor.execute('TRUNCATE TABLE unknown_data.group_random;')
     locations = data['locationId']
     locations = list(set(locations))
     store_df = DataFrame([], columns=['locationId', 'location', 'city', 'country', 'utc', 'local', 'parameter', 'value',
                                       'unit', 'latitude', 'longitude'])
+    # 根据locationid分组然后随机抽样，每组抽样数量按比例分配
     for locationid in locations:
         small_data = data.loc[data['locationId'] == locationid]
         data_length = len(small_data)
@@ -51,6 +54,7 @@ def group_random(data):
     store_df.to_sql('group_random', con=sql_con.engine, if_exists='append', index=False, chunksize=100000)
 
 
+# 数据进行聚类然后返回根据聚类分层后的数据 给all_cluster使用
 def cluster(data):
     sql = 'select value, count(value) from unknown_data.air where locationId=62256 or locationId=62880 or ' \
           'locationId=63094 or locationId=66355 or locationId=64704 or locationId=62693 group by value;'
@@ -74,6 +78,7 @@ def cluster(data):
     return dbdata, opdata, kmdata
 
 
+# 所有数据总体聚类根据聚类结果随机抽样
 def all_cluster(dbdata, opdata, kmdata):
     sql1 = 'TRUNCATE TABLE unknown_data.all_dbscan_random;'
     sql2 = 'TRUNCATE TABLE unknown_data.all_avg_dbscan_random;'
@@ -84,6 +89,7 @@ def all_cluster(dbdata, opdata, kmdata):
     clear_sql = [sql1, sql2, sql3, sql4, sql5, sql6]
     for clear in clear_sql:
         sql_con.cursor.execute(clear)
+    # 抽样
     # K-MEANS
     cs.sampling_all_data(sql_con.engine, kmdata, data_sum, sample_sum, 'all_k_means_random')
     cs.avg_sampling_all_data(sql_con.engine, kmdata, data_sum, sample_sum, 'all_avg_k_means_random')
@@ -95,6 +101,7 @@ def all_cluster(dbdata, opdata, kmdata):
     cs.avg_sampling_all_data(sql_con.engine, opdata, data_sum, sample_sum, 'all_avg_optics_random')
 
 
+# 把数据先分组然后进行组内的聚类运算抽样，每组抽样数量按比例分配
 def group_cluster(data):
     sql1 = 'TRUNCATE TABLE unknown_data.group_dbscan_random;'
     sql2 = 'TRUNCATE TABLE unknown_data.group_avg_dbscan_random;'
@@ -122,6 +129,7 @@ def group_cluster(data):
         same_data = {}
         for i in res:
             same_data[float(i[0])] = int(i[1])
+        # 给k-means使用
         location_data = data.loc[data['locationId'] == key]
         arr = location_data['value']
         data_length = len(arr)
@@ -131,12 +139,15 @@ def group_cluster(data):
             values.append((i, 0))
         arr = np.array(values)
         cluster = KMeans(n_clusters=10).fit(arr)
+        # 数据聚类运算
         k_means_layer = get_cluster(cluster, values)
         dbscan_layer = st.DBSCAN(same_data, Eps=eps, MinPts=minpts)
         optics_layer = st.OPTICS(same_data, Eps=eps, MinPts=minpts)
+        # 根据聚类结果进行数据分层
         opdata = cs.spilt_data_by_layer(optics_layer, location_data)
         dbdata = cs.spilt_data_by_layer(dbscan_layer, location_data)
         kmdata = cs.spilt_data_by_layer(k_means_layer, location_data)
+        # 利用上述聚类分层结果进行抽样
         # K-MEANS
         cs.sampling_all_data(sql_con.engine, kmdata, data_length, sample, 'group_k_means_random')
         cs.avg_sampling_all_data(sql_con.engine, kmdata, data_length, sample, 'group_avg_k_means_random')
@@ -148,6 +159,7 @@ def group_cluster(data):
         cs.avg_sampling_all_data(sql_con.engine, opdata, data_length, sample, 'group_avg_optics_random')
 
 
+# 把调用官方k-means算法的结果转换出来
 def get_cluster(cluster, data):
     result = []
     for i, j in zip(cluster.labels_, data):
@@ -167,6 +179,7 @@ def get_cluster(cluster, data):
     return result
 
 
+# 计算误差函数
 def get_error_rate():
     t_sql1 = 'select avg(value), locationId from unknown_data.all_dbscan_random group by locationId;'
     t_sql2 = 'select avg(value), locationId from unknown_data.all_avg_dbscan_random group by locationId;'
@@ -194,6 +207,7 @@ def get_error_rate():
         name = name.split('.')
         name = name[1]
         res_dict.clear()
+        # 计算误差
         for i in result:
             stand = stand_res[i[1]]
             error = abs(stand - float(i[0])) / stand * 100
@@ -203,6 +217,7 @@ def get_error_rate():
     return return_dict
 
 
+# 结果写入excel
 def write():
     wb = Workbook()
     excel = wb.active
@@ -239,7 +254,9 @@ def main():
     data = DataFrame(result, columns=['locationId', 'location', 'city', 'country', 'utc', 'local', 'parameter', 'value',
                                       'unit', 'latitude', 'longitude', 'id'])
     data = data.drop(['id'], axis=1)
+    # 设置value类数据类型不然会报错
     data['value'] = data['value'].astype('float')
+    # 进行各种抽样查询
     all_random(data)
     group_random(data)
     print('all_avg')
@@ -259,6 +276,7 @@ if __name__ == '__main__':
     sql_con.cursor.execute(sql)
     res = sql_con.cursor.fetchall()
     stand_res = {}
+    # 计算标准结果
     for i in res:
         stand_res[i[0]] = float(i[1])
     write_count = 1

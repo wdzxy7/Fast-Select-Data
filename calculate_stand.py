@@ -25,6 +25,7 @@ def read_csv(file_path):
 
 
 def air_statistics():
+    # 思路同下一函数
     df_list = get_data('air', 10)
     index = df_list[0]['Unnamed: 0']
     index = list(index)
@@ -56,17 +57,21 @@ def cluster_statistics(data_type, table_sum):
     df_list = []
     index = []
     data_dict = {}
+    # 计算循环次数 = index
     for i in range(run_range[data_type][0], run_range[data_type][1], run_range[data_type][2]):
         index.append(i)
+    # 读取所有csv表格存入list
     for i in range(1, table_sum + 1):
         file_path = data_type + '_Clustering_accuracy' + str(i) + '.csv'
         df = read_csv(file_path)
         df.index = index
         df_list.append(df)
+    # 创建存储结果字典
     for i in index:
         data_dict[i] = DataFrame([], columns=df_list[0].columns)
     for df in df_list:
         column_count = 0
+        # 拆分每一个dataframe中的每行数据对应结果字典存储
         for key in data_dict.keys():
             t_data = df.iloc[column_count]
             arr = np.array(t_data)
@@ -76,6 +81,7 @@ def cluster_statistics(data_type, table_sum):
             t_df.columns = df_list[0].columns
             data_dict[key] = data_dict[key].append(t_df.copy(), ignore_index=True)
             column_count += 1
+    # 进行统计学计算存储结果
     for key in data_dict.keys():
         df = data_dict[key]
         m = df.describe()
@@ -84,6 +90,7 @@ def cluster_statistics(data_type, table_sum):
 
 
 if __name__ == '__main__':
+    # 数据测试规模，循环变量
     run_range = {
         'air': [10000, 90001, 10000],
         'incline': [1000, 15001, 1000],
