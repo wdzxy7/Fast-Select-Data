@@ -64,11 +64,11 @@ def real_data_test(data_type):
     sql_con = sql_connect.Sql_c()
     # 测试sql
     t_sql1 = 'select avg(score) from unknown_data.k_means_result;'
-    t_sql2 = 'select avg(score) from unknown_data.avg_k_means_result;'
+    t_sql2 = 'select avg(score) from unknown_data.proportion_k_means_result;'
     t_sql3 = 'select avg(score) from unknown_data.dbscan_result;'
-    t_sql4 = 'select avg(score) from unknown_data.avg_dbscan_result;'
+    t_sql4 = 'select avg(score) from unknown_data.proportion_dbscan_result;'
     t_sql5 = 'select avg(score) from unknown_data.optics_result;'
-    t_sql6 = 'select avg(score) from unknown_data.avg_optics_result;'
+    t_sql6 = 'select avg(score) from unknown_data.proportion_optics_result;'
     t_sql7 = 'select avg(score) from unknown_data.random_result;'
     t_sql8 = 'select avg(score) from unknown_data.avg_result;'
     test_sql = [t_sql1, t_sql2, t_sql3, t_sql4, t_sql5, t_sql6, t_sql7, t_sql8]
@@ -77,10 +77,10 @@ def real_data_test(data_type):
     sql2 = 'TRUNCATE TABLE unknown_data.dbscan_result;'
     sql3 = 'TRUNCATE TABLE unknown_data.random_result;'
     sql4 = 'TRUNCATE TABLE unknown_data.avg_result;'
-    sql5 = 'TRUNCATE TABLE unknown_data.avg_optics_result;'
-    sql6 = 'TRUNCATE TABLE unknown_data.avg_dbscan_result;'
+    sql5 = 'TRUNCATE TABLE unknown_data.proportion_optics_result;'
+    sql6 = 'TRUNCATE TABLE unknown_data.proportion_dbscan_result;'
     sql7 = 'TRUNCATE TABLE unknown_data.k_means_result;'
-    sql8 = 'TRUNCATE TABLE unknown_data.avg_k_means_result;'
+    sql8 = 'TRUNCATE TABLE unknown_data.proportion_k_means_result;'
     clear_sql = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8]
     sql = select_count_sql[data_type]
     sql_con.cursor.execute(sql)
@@ -128,13 +128,16 @@ def real_data_test(data_type):
             sql_con.cursor.execute(sql)
         # K-MEANS
         st.sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'k_means_result')
-        st.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_k_means_result')
+        # st.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_k_means_result')
+        st.proportion_sample_data(sql_con.engine, kmdata, data_sum, sample_sum, 'proportion_k_means_result')
         # DBSCAN
         st.sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'dbscan_result')
-        st.avg_sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'avg_dbscan_result')
+        # st.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_dbscan_result')
+        st.proportion_sample_data(sql_con.engine, dbdata, data_sum, sample_sum, 'proportion_dbscan_result')
         # OPTICS
         st.sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'optics_result')
-        st.avg_sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'avg_optics_result')
+        # st.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_optics_result')
+        st.proportion_sample_data(sql_con.engine, opdata, data_sum, sample_sum, 'proportion_optics_result')
         # RANDOM
         df_sample = data.sample(frac=sample_sum / data_sum, replace=False, axis=0)
         df_sample.to_sql('random_result', con=sql_con.engine, if_exists='append', index=False, chunksize=100000)
@@ -150,7 +153,7 @@ def real_data_test(data_type):
         t = t_result.copy()
         test_result.append(t)
     # 存储结果
-    columns_list = ['K-MEANS', 'avg_K-MEANS', 'DBSCAN', 'avg_DBSCAN', 'OPTICS', 'avg_OPTICS', 'RANDOM', 'AVG']
+    columns_list = ['K-MEANS', 'proportion_K-MEANS', 'DBSCAN', 'proportion_DBSCAN', 'OPTICS', 'proportion_OPTICS', 'RANDOM', 'AVG']
     df = DataFrame(test_result, columns=columns_list)
     # df.index = ind
     print(df)
@@ -192,7 +195,7 @@ if __name__ == '__main__':
     # 写入文件编号
     write_count = 1
     # 测试次数
-    run_times = 10
+    run_times = 1
     for k in range(run_times):
-        real_data_test('air')
+        real_data_test('incline')
         write_count += 1

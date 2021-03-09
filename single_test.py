@@ -152,7 +152,6 @@ def spilt_data_by_layer(layer, data_df):
 # 根据聚类结果进行分层随机抽样，每层抽样数量按公式分配，并存入数据库
 def sampling_data(engine, df_list, data_sum, sample_sum, database):
     denominator = 0
-    lest = sample_sum
     molecular_list = []
     # 计算公式所需的每一层的分子分母
     for df in df_list:
@@ -176,9 +175,10 @@ def sampling_data(engine, df_list, data_sum, sample_sum, database):
             sam = 1
         if sam < 0:
             sam = 0
-        if sam is np.nan:
-            sam = 0
-        df_sample = df.sample(frac=sam, replace=False, axis=0)
+        try:
+            df_sample = df.sample(frac=sam, replace=False, axis=0)
+        except:
+            df_sample = df.sample(frac=0, replace=False, axis=0)
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
 
 
@@ -229,6 +229,18 @@ def avg_sampling_data(engine, df_list, data_sum, sample_sum, database):
         lest = lest - len(df_sample)
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
     # 抽取0项
+
+
+def proportion_sample_data(engine, df_list, data_sum, sample_sum, database):
+    df_sample = DataFrame([], columns=['score']).astype('float')
+    for df in df_list:
+        length = len(df)
+        rate = length / data_sum
+        sample = sample_sum * rate
+        sam = sample / length
+        sample = df.sample(frac=sam, replace=False, axis=0)
+        df_sample = df_sample.append(sample, ignore_index=True)
+    df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
 
 
 # 使用k-means抽样
@@ -398,6 +410,25 @@ def without_z_layer():
         print(df_sample)
         print('next--------------------------------------------------------')
         df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
+
+
+def get_cluster(cluster, data):
+    result = []
+    for i, j in zip(cluster.labels_, data):
+        tup = (i, j)
+        result.append(tup)
+    result = set(result)
+    result_dict = {}
+    for i in result:
+        try:
+            result_dict[i[0]].append(i[1][0])
+        except:
+            result_dict[i[0]] = []
+            result_dict[i[0]].append(i[1][0])
+    result = []
+    for key in result_dict:
+        result.append(sorted(result_dict[key]))
+    return result
 
 
 # DBSCAN聚类抽样

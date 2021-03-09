@@ -95,7 +95,6 @@ def change(x):
 
 
 def draw_unknown_data(data_type, table_sum):
-    # plt.figure()
     df = DataFrame()
     # 读取csv文件
     for i in range(1, table_sum + 1):
@@ -108,16 +107,15 @@ def draw_unknown_data(data_type, table_sum):
     df = df / table_sum
     # 便于画图把误差超过100的规定为100 使用change函数
     df['K-MEANS'] = df['K-MEANS'].apply(lambda x: change(x))
-    df['avg_K-MEANS'] = df['avg_K-MEANS'].apply(lambda x: change(x))
+    df['proportion_K-MEANS'] = df['proportion_K-MEANS'].apply(lambda x: change(x))
     df['DBSCAN'] = df['DBSCAN'].apply(lambda x: change(x))
-    df['avg_DBSCAN'] = df['avg_DBSCAN'].apply(lambda x: change(x))
+    df['proportion_DBSCAN'] = df['proportion_DBSCAN'].apply(lambda x: change(x))
     df['OPTICS'] = df['OPTICS'].apply(lambda x: change(x))
-    df['avg_OPTICS'] = df['avg_OPTICS'].apply(lambda x: change(x))
+    df['proportion_OPTICS'] = df['proportion_OPTICS'].apply(lambda x: change(x))
     df['RANDOM'] = df['RANDOM'].apply(lambda x: change(x))
     df['AVG'] = df['AVG'].apply(lambda x: change(x))
     # 删除掉表现过于糟糕的k-means
-    df.drop(['K-MEANS', 'avg_K-MEANS', 'avg_DBSCAN', 'avg_OPTICS'], axis=1, inplace=True)
-
+    df.drop(['K-MEANS', 'proportion_DBSCAN', 'proportion_OPTICS'], axis=1, inplace=True)
     print(df)
     df.plot(figsize=(20, 8))
     plt.show()
@@ -136,5 +134,33 @@ def draw_air():
     print(df / 5)
 
 
-table_sum = 10
-draw_unknown_data('incline', table_sum)
+def k_to_k_means():
+    df_dict = {}
+    df = DataFrame()
+    for k in range(1, 11):
+        df_dict[k] = []
+        for j in range(1, 11):
+            file_path = 'result/k-means/k' + str(k) + '_Clustering_accuracy' + str(j) + '.csv'
+            data = read_csv(file_path)
+            if j == 1:
+                df = data
+            else:
+                df = df + data
+        df = df / 10
+        df_dict[k] = df.copy(deep=True)
+    df_list = []
+    for key in df_dict.keys():
+        df_dict[key].columns = [key]
+        df_list.append(df_dict[key])
+    df = pd.concat(df_list, axis=1)
+    print(df)
+    df.plot(figsize=(20, 8))
+    plt.show()
+
+
+if __name__ == '__main__':
+    k_to_k_means()
+    '''
+    table_sum = 10
+    draw_unknown_data('incline', table_sum)
+    '''
