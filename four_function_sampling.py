@@ -1,7 +1,7 @@
 import re
 import numpy as np
 import sql_connect  # 自写库sql连接
-import single_test as st  # 自写库
+import cluster_sample_algorithm as csa  # 自写库
 from pandas import DataFrame
 from openpyxl import Workbook
 import cluster_sampling as cs  # 自写库
@@ -49,8 +49,8 @@ def cluster(data):
     arr = np.array(values)
     cluster = KMeans(n_clusters=10).fit(arr)
     k_means_layer = get_cluster(cluster, values)
-    dbscan_layer = st.DBSCAN(same_data, Eps=0.4, MinPts=6)
-    optics_layer = st.OPTICS(same_data, Eps=0.4, MinPts=6)
+    dbscan_layer = csa.DBSCAN(same_data, Eps=0.4, MinPts=6)
+    optics_layer = csa.OPTICS(same_data, Eps=0.4, MinPts=6)
     opdata = cs.spilt_data_by_layer(optics_layer, data)
     dbdata = cs.spilt_data_by_layer(dbscan_layer, data)
     kmdata = cs.spilt_data_by_layer(k_means_layer, data)
@@ -114,8 +114,8 @@ def group_cluster(data):
         cluster = KMeans(n_clusters=10).fit(arr)
         # 数据聚类运算
         k_means_layer = get_cluster(cluster, values)
-        dbscan_layer = st.DBSCAN(same_data, Eps=eps, MinPts=minpts)
-        optics_layer = st.OPTICS(same_data, Eps=eps, MinPts=minpts)
+        dbscan_layer = csa.DBSCAN(same_data, Eps=eps, MinPts=minpts)
+        optics_layer = csa.OPTICS(same_data, Eps=eps, MinPts=minpts)
         # 根据聚类结果进行数据分层
         opdata = cs.spilt_data_by_layer(optics_layer, location_data)
         dbdata = cs.spilt_data_by_layer(dbscan_layer, location_data)

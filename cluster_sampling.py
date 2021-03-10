@@ -50,7 +50,7 @@ def sampling_all_data(engine, df_list, data_sum, sample_sum, database):
 
 
 def proportion_sample_data(engine, df_list, data_sum, sample_sum, database):
-    df_sample = DataFrame([], columns=['score']).astype('float')
+    df_sample = DataFrame([], columns=['value']).astype('float')
     for df in df_list:
         length = len(df)
         rate = length / data_sum

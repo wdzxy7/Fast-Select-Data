@@ -1,7 +1,7 @@
 import pymysql
 from pandas import DataFrame
 from decimal import Decimal
-import single_test as st
+import cluster_sample_algorithm as csa
 import sql_connect
 
 
@@ -87,9 +87,9 @@ def real_data_test(data_type):
     for i in res:
         same_data[float(i[0])] = int(i[1])
     # 聚类分层
-    optics_layer = st.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
-    dbscan_layer = st.DBSCAN(same_data, Eps=Eps, MinPts=MinPts)
-    k_means_layer = st.k_means_three(list(same_data.keys()))
+    optics_layer = csa.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
+    dbscan_layer = csa.DBSCAN(same_data, Eps=Eps, MinPts=MinPts)
+    k_means_layer = csa.k_means_three(list(same_data.keys()))
     print('DBSCAN:')
     for i in dbscan_layer:
         print(sorted(i))
@@ -105,9 +105,9 @@ def real_data_test(data_type):
     sql_result = sql_con.cursor.fetchall()
     data = DataFrame(sql_result, columns=['score']).astype('float')
     # 数据分层
-    opdata = st.spilt_data_by_layer(optics_layer, data)
-    dbdata = st.spilt_data_by_layer(dbscan_layer, data)
-    kmdata = st.spilt_data_by_layer(k_means_layer, data)
+    opdata = csa.spilt_data_by_layer(optics_layer, data)
+    dbdata = csa.spilt_data_by_layer(dbscan_layer, data)
+    kmdata = csa.spilt_data_by_layer(k_means_layer, data)
     data_sum = len(sql_result)
     # 测试数据
     stand = stand_avg[data_type]
@@ -125,17 +125,17 @@ def real_data_test(data_type):
         for sql in clear_sql:
             sql_con.cursor.execute(sql)
         # K-MEANS
-        st.sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'k_means_result')
-        # st.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_k_means_result')
-        st.proportion_sample_data(sql_con.engine, kmdata, data_sum, sample_sum, 'proportion_k_means_result')
+        csa.sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'k_means_result')
+        # csa.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_k_means_result')
+        csa.proportion_sample_data(sql_con.engine, kmdata, data_sum, sample_sum, 'proportion_k_means_result')
         # DBSCAN
-        st.sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'dbscan_result')
-        # st.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_dbscan_result')
-        # st.proportion_sample_data(sql_con.engine, dbdata, data_sum, sample_sum, 'proportion_dbscan_result')
+        csa.sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'dbscan_result')
+        # csa.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_dbscan_result')
+        # csa.proportion_sample_data(sql_con.engine, dbdata, data_sum, sample_sum, 'proportion_dbscan_result')
         # OPTICS
-        st.sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'optics_result')
-        # st.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_optics_result')
-        # st.proportion_sample_data(sql_con.engine, opdata, data_sum, sample_sum, 'proportion_optics_result')
+        csa.sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'optics_result')
+        # csa.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_optics_result')
+        # csa.proportion_sample_data(sql_con.engine, opdata, data_sum, sample_sum, 'proportion_optics_result')
         # RANDOM
         df_sample = data.sample(frac=sample_sum / data_sum, replace=False, axis=0)
         df_sample.to_sql('random_result', con=sql_con.engine, if_exists='append', index=False, chunksize=100000)
