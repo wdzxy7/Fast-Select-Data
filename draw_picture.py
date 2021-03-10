@@ -113,7 +113,6 @@ def draw_unknown_data(data_type, table_sum):
     df['OPTICS'] = df['OPTICS'].apply(lambda x: change(x))
     df['proportion_OPTICS'] = df['proportion_OPTICS'].apply(lambda x: change(x))
     df['RANDOM'] = df['RANDOM'].apply(lambda x: change(x))
-    df['AVG'] = df['AVG'].apply(lambda x: change(x))
     # 删除掉表现过于糟糕的k-means
     df.drop(['K-MEANS', 'proportion_DBSCAN', 'proportion_OPTICS'], axis=1, inplace=True)
     print(df)

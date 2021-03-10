@@ -15,27 +15,6 @@ def all_random(data):
     df_sample.to_sql('all_random', con=sql_con.engine, if_exists='append', index=False, chunksize=100000)
 
 
-def all_avg_random(data):
-    sql_con.cursor.execute('TRUNCATE TABLE unknown_data.all_avg_random;')
-    df_length = len(data)
-    hist = round(data_sum / sample_sum)
-    sam = 1 / hist
-    store_df = DataFrame([], columns=['locationId', 'location', 'city', 'country', 'utc', 'local', 'parameter', 'value',
-                                      'unit', 'latitude', 'longitude'])
-    front = 0
-    back = hist
-    max_range = front + df_length - 1
-    while front < max_range:
-        small = data.loc[front:back, :]
-        sample = small.sample(frac=sam, replace=False, axis=0)
-        store_df = store_df.append(sample, ignore_index=True)
-        front = back + 1
-        back = back + hist
-        if back > max_range:
-            back = max_range
-    store_df.to_sql('all_avg_random', con=sql_con.engine, if_exists='append', index=False, chunksize=100000)
-
-
 # 先分组然后随机抽样
 def group_random(data):
     sql_con.cursor.execute('TRUNCATE TABLE unknown_data.group_random;')
@@ -81,35 +60,29 @@ def cluster(data):
 # 所有数据总体聚类根据聚类结果随机抽样
 def all_cluster(dbdata, opdata, kmdata):
     sql1 = 'TRUNCATE TABLE unknown_data.all_dbscan_random;'
-    sql2 = 'TRUNCATE TABLE unknown_data.all_avg_dbscan_random;'
-    sql3 = 'TRUNCATE TABLE unknown_data.all_optics_random;'
-    sql4 = 'TRUNCATE TABLE unknown_data.all_avg_optics_random;'
-    sql5 = 'TRUNCATE TABLE unknown_data.all_k_means_random;'
-    sql6 = 'TRUNCATE TABLE unknown_data.all_avg_k_means_random;'
-    clear_sql = [sql1, sql2, sql3, sql4, sql5, sql6]
+    sql2 = 'TRUNCATE TABLE unknown_data.all_optics_random;'
+    sql3 = 'TRUNCATE TABLE unknown_data.all_k_means_random;'
+    sql4 = 'TRUNCATE TABLE unknown_data.all_proportion_k_means_random;'
+    clear_sql = [sql1, sql2, sql3, sql4]
     for clear in clear_sql:
         sql_con.cursor.execute(clear)
     # 抽样
     # K-MEANS
     cs.sampling_all_data(sql_con.engine, kmdata, data_sum, sample_sum, 'all_k_means_random')
-    cs.avg_sampling_all_data(sql_con.engine, kmdata, data_sum, sample_sum, 'all_avg_k_means_random')
+    cs.proportion_sample_data(sql_con.engine, kmdata, data_sum, sample_sum, 'proportion_avg_k_means_random')
     # DBSCAN
     cs.sampling_all_data(sql_con.engine, dbdata, data_sum, sample_sum, 'all_dbscan_random')
-    cs.avg_sampling_all_data(sql_con.engine, dbdata, data_sum, sample_sum, 'all_avg_dbscan_random')
     # OPTICS
     cs.sampling_all_data(sql_con.engine, opdata, data_sum, sample_sum, 'all_optics_random')
-    cs.avg_sampling_all_data(sql_con.engine, opdata, data_sum, sample_sum, 'all_avg_optics_random')
 
 
 # 把数据先分组然后进行组内的聚类运算抽样，每组抽样数量按比例分配
 def group_cluster(data):
     sql1 = 'TRUNCATE TABLE unknown_data.group_dbscan_random;'
-    sql2 = 'TRUNCATE TABLE unknown_data.group_avg_dbscan_random;'
-    sql3 = 'TRUNCATE TABLE unknown_data.group_optics_random;'
-    sql4 = 'TRUNCATE TABLE unknown_data.group_avg_optics_random;'
-    sql5 = 'TRUNCATE TABLE unknown_data.group_k_means_random;'
-    sql6 = 'TRUNCATE TABLE unknown_data.group_avg_k_means_random;'
-    clear_sql = [sql1, sql2, sql3, sql4, sql5, sql6]
+    sql2 = 'TRUNCATE TABLE unknown_data.group_optics_random;'
+    sql3 = 'TRUNCATE TABLE unknown_data.group_k_means_random;'
+    sql4 = 'TRUNCATE TABLE unknown_data.group_proportion_k_means_random;'
+    clear_sql = [sql1, sql2, sql3, sql4]
     for clear in clear_sql:
         sql_con.cursor.execute(clear)
     parameter = {
@@ -150,13 +123,11 @@ def group_cluster(data):
         # 利用上述聚类分层结果进行抽样
         # K-MEANS
         cs.sampling_all_data(sql_con.engine, kmdata, data_length, sample, 'group_k_means_random')
-        cs.avg_sampling_all_data(sql_con.engine, kmdata, data_length, sample, 'group_avg_k_means_random')
+        cs.proportion_sample_data(sql_con.engine, kmdata, data_length, sample, 'group_proportion_k_means_random')
         # DBSCAN
         cs.sampling_all_data(sql_con.engine, dbdata, data_length, sample, 'group_dbscan_random')
-        cs.avg_sampling_all_data(sql_con.engine, dbdata, data_length, sample, 'group_avg_dbscan_random')
         # OPTICS
         cs.sampling_all_data(sql_con.engine, opdata, data_length, sample, 'group_optics_random')
-        cs.avg_sampling_all_data(sql_con.engine, opdata, data_length, sample, 'group_avg_optics_random')
 
 
 # 把调用官方k-means算法的结果转换出来
@@ -182,21 +153,16 @@ def get_cluster(cluster, data):
 # 计算误差函数
 def get_error_rate():
     t_sql1 = 'select avg(value), locationId from unknown_data.all_dbscan_random group by locationId;'
-    t_sql2 = 'select avg(value), locationId from unknown_data.all_avg_dbscan_random group by locationId;'
-    t_sql3 = 'select avg(value), locationId from unknown_data.all_optics_random group by locationId;'
-    t_sql4 = 'select avg(value), locationId from unknown_data.all_avg_optics_random group by locationId;'
-    t_sql5 = 'select avg(value), locationId from unknown_data.all_k_means_random group by locationId;'
-    t_sql6 = 'select avg(value), locationId from unknown_data.all_avg_k_means_random group by locationId;'
-    t_sql7 = 'select avg(value), locationId from unknown_data.group_dbscan_random group by locationId;'
-    t_sql8 = 'select avg(value), locationId from unknown_data.group_avg_dbscan_random group by locationId;'
-    t_sql9 = 'select avg(value), locationId from unknown_data.group_optics_random group by locationId;'
-    t_sql10 = 'select avg(value), locationId from unknown_data.group_avg_optics_random group by locationId;'
-    t_sql11 = 'select avg(value), locationId from unknown_data.group_k_means_random group by locationId;'
-    t_sql12 = 'select avg(value), locationId from unknown_data.group_avg_k_means_random group by locationId;'
-    t_sql13 = 'select avg(value), locationId from unknown_data.all_random group by locationId;'
-    t_sql14 = 'select avg(value), locationId from unknown_data.group_random group by locationId;'
-    t_sql15 = 'select avg(value), locationId from unknown_data.all_avg_random group by locationId;'
-    test_sql = [t_sql1, t_sql2, t_sql3, t_sql4, t_sql5, t_sql6, t_sql7, t_sql8, t_sql9, t_sql10, t_sql11, t_sql12, t_sql13, t_sql14, t_sql15]
+    t_sql2 = 'select avg(value), locationId from unknown_data.all_optics_random group by locationId;'
+    t_sql3 = 'select avg(value), locationId from unknown_data.all_k_means_random group by locationId;'
+    t_sql4 = 'select avg(value), locationId from unknown_data.all_proportion_k_means_random group by locationId;'
+    t_sql5 = 'select avg(value), locationId from unknown_data.group_dbscan_random group by locationId;'
+    t_sql6 = 'select avg(value), locationId from unknown_data.group_optics_random group by locationId;'
+    t_sql7 = 'select avg(value), locationId from unknown_data.group_k_means_random group by locationId;'
+    t_sql8 = 'select avg(value), locationId from unknown_data.group_proportion_k_means_random group by locationId;'
+    t_sql9 = 'select avg(value), locationId from unknown_data.all_random group by locationId;'
+    t_sql10 = 'select avg(value), locationId from unknown_data.group_random group by locationId;'
+    test_sql = [t_sql1, t_sql2, t_sql3, t_sql4, t_sql5, t_sql6, t_sql7, t_sql8, t_sql9, t_sql10]
     return_dict = {}
     res_dict = {}
     for sql in test_sql:
@@ -259,8 +225,6 @@ def main():
     # 进行各种抽样查询
     all_random(data)
     group_random(data)
-    print('all_avg')
-    all_avg_random(data)
     print('all_cluster')
     dbdata, opdata, kmdata = cluster(data)
     all_cluster(dbdata, opdata, kmdata)
@@ -280,7 +244,7 @@ if __name__ == '__main__':
     for i in res:
         stand_res[i[0]] = float(i[1])
     write_count = 1
-    for i in range(10):
+    for i in range(1):
         main()
         res_dict = get_error_rate()
         write()
