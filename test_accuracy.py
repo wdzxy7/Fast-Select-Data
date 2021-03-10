@@ -64,22 +64,18 @@ def real_data_test(data_type):
     sql_con = sql_connect.Sql_c()
     # 测试sql
     t_sql1 = 'select avg(score) from unknown_data.k_means_result;'
-    t_sql2 = 'select avg(score) from unknown_data.proportion_k_means_result;'
-    t_sql3 = 'select avg(score) from unknown_data.dbscan_result;'
-    t_sql4 = 'select avg(score) from unknown_data.proportion_dbscan_result;'
-    t_sql5 = 'select avg(score) from unknown_data.optics_result;'
-    t_sql6 = 'select avg(score) from unknown_data.proportion_optics_result;'
-    t_sql7 = 'select avg(score) from unknown_data.random_result;'
-    test_sql = [t_sql1, t_sql2, t_sql3, t_sql4, t_sql5, t_sql6, t_sql7]
+    t_sql2 = 'select avg(score) from unknown_data.dbscan_result;'
+    t_sql3 = 'select avg(score) from unknown_data.optics_result;'
+    t_sql4 = 'select avg(score) from unknown_data.proportion_k_means_result;'
+    t_sql5 = 'select avg(score) from unknown_data.random_result;'
+    test_sql = [t_sql1, t_sql2, t_sql3, t_sql4, t_sql5]
     # 清表sql
     sql1 = 'TRUNCATE TABLE unknown_data.optics_result;'
     sql2 = 'TRUNCATE TABLE unknown_data.dbscan_result;'
     sql3 = 'TRUNCATE TABLE unknown_data.random_result;'
-    sql5 = 'TRUNCATE TABLE unknown_data.proportion_optics_result;'
-    sql6 = 'TRUNCATE TABLE unknown_data.proportion_dbscan_result;'
-    sql7 = 'TRUNCATE TABLE unknown_data.k_means_result;'
-    sql8 = 'TRUNCATE TABLE unknown_data.proportion_k_means_result;'
-    clear_sql = [sql1, sql2, sql3, sql5, sql6, sql7, sql8]
+    sql4 = 'TRUNCATE TABLE unknown_data.k_means_result;'
+    sql5 = 'TRUNCATE TABLE unknown_data.proportion_k_means_result;'
+    clear_sql = [sql1, sql2, sql3, sql4, sql5]
     sql = select_count_sql[data_type]
     sql_con.cursor.execute(sql)
     res = sql_con.cursor.fetchall()

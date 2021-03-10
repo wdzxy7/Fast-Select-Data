@@ -69,7 +69,7 @@ def all_cluster(dbdata, opdata, kmdata):
     # 抽样
     # K-MEANS
     cs.sampling_all_data(sql_con.engine, kmdata, data_sum, sample_sum, 'all_k_means_random')
-    cs.proportion_sample_data(sql_con.engine, kmdata, data_sum, sample_sum, 'proportion_avg_k_means_random')
+    cs.proportion_sample_data(sql_con.engine, kmdata, data_sum, sample_sum, 'all_proportion_avg_k_means_random')
     # DBSCAN
     cs.sampling_all_data(sql_con.engine, dbdata, data_sum, sample_sum, 'all_dbscan_random')
     # OPTICS
@@ -223,7 +223,9 @@ def main():
     # 设置value类数据类型不然会报错
     data['value'] = data['value'].astype('float')
     # 进行各种抽样查询
+    print('all_random')
     all_random(data)
+    print('group_random')
     group_random(data)
     print('all_cluster')
     dbdata, opdata, kmdata = cluster(data)
