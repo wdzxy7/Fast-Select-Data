@@ -109,28 +109,27 @@ def draw_unknown_data(data_type, table_sum):
     df['K-MEANS'] = df['K-MEANS'].apply(lambda x: change(x))
     df['proportion_K-MEANS'] = df['proportion_K-MEANS'].apply(lambda x: change(x))
     df['DBSCAN'] = df['DBSCAN'].apply(lambda x: change(x))
-    df['proportion_DBSCAN'] = df['proportion_DBSCAN'].apply(lambda x: change(x))
+    # df['proportion_DBSCAN'] = df['proportion_DBSCAN'].apply(lambda x: change(x))
     df['OPTICS'] = df['OPTICS'].apply(lambda x: change(x))
-    df['proportion_OPTICS'] = df['proportion_OPTICS'].apply(lambda x: change(x))
+    # df['proportion_OPTICS'] = df['proportion_OPTICS'].apply(lambda x: change(x))
     df['RANDOM'] = df['RANDOM'].apply(lambda x: change(x))
     # 删除掉表现过于糟糕的k-means
-    df.drop(['K-MEANS', 'proportion_DBSCAN', 'proportion_OPTICS'], axis=1, inplace=True)
+    df.drop(['K-MEANS'], axis=1, inplace=True)
     print(df)
     df.plot(figsize=(20, 8))
     plt.show()
 
 
 def draw_air():
-    df = DataFrame()
-    sheet_sum = 10
-    for i in range(1, 6):
-        file_path = 'air_Clustering_accuracy' + str(i) + '.csv'
-        data = read_csv(file_path)
-        if i == 1:
-            df = data
-        else:
-            df = df + data
-    print(df / 5)
+    data = DataFrame()
+    for percentage in range(2, 11, 2):
+        path = 'result/' + str(percentage) + '%/incline' + str(percentage) + '%.csv'
+        df = read_csv(path)
+        data = data.append(df, ignore_index=True)
+    data.drop('Unnamed: 0', axis=1, inplace=True)
+    data.plot(figsize=(20, 8))
+    print(data)
+    plt.show()
 
 
 def k_to_k_means():
@@ -157,9 +156,16 @@ def k_to_k_means():
     plt.show()
 
 
+def draw_statistics():
+    file_path = 'statistics_result.csv'
+    df = read_csv(file_path)
+    df.drop(['all_k_means_random', 'group_k_means_random'], axis=1, inplace=True)
+    df.plot(figsize=(20, 8))
+    plt.show()
+
+
 if __name__ == '__main__':
-    k_to_k_means()
-    '''
-    table_sum = 10
-    draw_unknown_data('incline', table_sum)
-    '''
+    # draw_statistics()
+    # k_to_k_means()
+    draw_unknown_data('air_incline', 10)
+    # draw_air()

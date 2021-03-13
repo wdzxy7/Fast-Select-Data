@@ -169,6 +169,8 @@ def sampling_data(engine, df_list, data_sum, sample_sum, database):
             specimen = molecular / denominator
         except:
             specimen = sample_sum * len(df) / data_sum
+        if specimen == 0:
+            specimen = sample_sum * len(df) / data_sum
         sam = float(specimen) / len(df)
         if sam > 1:
             sam = 1
@@ -237,6 +239,8 @@ def proportion_sample_data(engine, df_list, data_sum, sample_sum, database):
         rate = length / data_sum
         sample = sample_sum * rate
         sam = sample / length
+        if sam > 1:
+            sam = 1
         sample = df.sample(frac=sam, replace=False, axis=0)
         df_sample = df_sample.append(sample, ignore_index=True)
     df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)

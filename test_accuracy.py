@@ -64,9 +64,9 @@ def real_data_test(data_type):
     sql_con = sql_connect.Sql_c()
     # 测试sql
     t_sql1 = 'select avg(score) from unknown_data.k_means_result;'
-    t_sql2 = 'select avg(score) from unknown_data.dbscan_result;'
-    t_sql3 = 'select avg(score) from unknown_data.optics_result;'
-    t_sql4 = 'select avg(score) from unknown_data.proportion_k_means_result;'
+    t_sql2 = 'select avg(score) from unknown_data.proportion_k_means_result;'
+    t_sql3 = 'select avg(score) from unknown_data.dbscan_result;'
+    t_sql4 = 'select avg(score) from unknown_data.optics_result;'
     t_sql5 = 'select avg(score) from unknown_data.random_result;'
     test_sql = [t_sql1, t_sql2, t_sql3, t_sql4, t_sql5]
     # 清表sql
@@ -110,10 +110,11 @@ def real_data_test(data_type):
     test_result = []
     t_result = []
     ind = []
-    start = run_range[data_type][0]
-    end = run_range[data_type][1]
-    pace = run_range[data_type][2]
-    for sample_sum in range(start, end, pace):
+    start = run_range[0]
+    end = run_range[1]
+    pace = run_range[2]
+    for rate in range(start, end, pace):
+        sample_sum = int(data_sum * (rate / 100))
         ind.append(sample_sum)
         print(sample_sum)
         t_result.clear()
@@ -126,11 +127,11 @@ def real_data_test(data_type):
         csa.proportion_sample_data(sql_con.engine, kmdata, data_sum, sample_sum, 'proportion_k_means_result')
         # DBSCAN
         csa.sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'dbscan_result')
-        # csa.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_dbscan_result')
+        # csa.avg_sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'avg_dbscan_result')
         # csa.proportion_sample_data(sql_con.engine, dbdata, data_sum, sample_sum, 'proportion_dbscan_result')
         # OPTICS
         csa.sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'optics_result')
-        # csa.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_optics_result')
+        # csa.avg_sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'avg_optics_result')
         # csa.proportion_sample_data(sql_con.engine, opdata, data_sum, sample_sum, 'proportion_optics_result')
         # RANDOM
         df_sample = data.sample(frac=sample_sum / data_sum, replace=False, axis=0)
@@ -158,36 +159,36 @@ if __name__ == '__main__':
     select_data_sql = {
         'air': 'select value from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\'',
         'incline': 'select score from unknown_data.data3 where `index`=22021001101410011321;',
-        'air_incline': 'select value from unknown_data.air where locationId=63094;'
+        'air_incline': 'select value from unknown_data.air where locationId=63094;',
+        'incline2': 'select score from unknown_data.data3 where `index`=21021003104010031120;'
     }
     # 查询数据分布sql
     select_count_sql = {
         'air': 'select value, count(value) from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;',
         'incline': 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;',
-        'air_incline': 'select value, count(value) from unknown_data.air where locationId=63094 group by value;'
+        'air_incline': 'select value, count(value) from unknown_data.air where locationId=63094 group by value;',
+        'incline2': 'select score, count(score) from unknown_data.data3 where `index`=21021003104010031120 group by score;'
     }
     # 循环设置
-    run_range = {
-        'air': [10000, 90001, 10000],
-        'incline': [1000, 15001, 1000],
-        'air_incline': [2000, 8000, 1000]
-    }
+    run_range = [5, 51, 5]
     # 设置Eps，MinPts
     parameter = {
         'air': [1, 15],
         'incline': [0.0022, 7],
-        'air_incline': [0.101, 10]
+        'air_incline': [0.111, 10],
+        'incline2': [1.001, 6]
     }
     # 标准平均值
     stand_avg = {
         'incline': 0.000389,
         'air': 3.97103,
-        'air_incline': 0.0177754
+        'air_incline': 0.0177754,
+        'incline2': 0.137269
     }
     # 写入文件编号
     write_count = 1
     # 测试次数
-    run_times = 1
+    run_times = 10
     for k in range(run_times):
-        real_data_test('incline')
+        real_data_test('air_incline')
         write_count += 1

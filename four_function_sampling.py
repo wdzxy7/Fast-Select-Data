@@ -49,8 +49,8 @@ def cluster(data):
     arr = np.array(values)
     cluster = KMeans(n_clusters=10).fit(arr)
     k_means_layer = get_cluster(cluster, values)
-    dbscan_layer = csa.DBSCAN(same_data, Eps=0.4, MinPts=6)
-    optics_layer = csa.OPTICS(same_data, Eps=0.4, MinPts=6)
+    dbscan_layer = csa.DBSCAN(same_data, Eps=0.403, MinPts=200)
+    optics_layer = csa.OPTICS(same_data, Eps=0.403, MinPts=200)
     opdata = cs.spilt_data_by_layer(optics_layer, data)
     dbdata = cs.spilt_data_by_layer(dbscan_layer, data)
     kmdata = cs.spilt_data_by_layer(k_means_layer, data)
@@ -69,7 +69,7 @@ def all_cluster(dbdata, opdata, kmdata):
     # 抽样
     # K-MEANS
     cs.sampling_all_data(sql_con.engine, kmdata, data_sum, sample_sum, 'all_k_means_random')
-    cs.proportion_sample_data(sql_con.engine, kmdata, data_sum, sample_sum, 'all_proportion_avg_k_means_random')
+    cs.proportion_sample_data(sql_con.engine, kmdata, data_sum, sample_sum, 'all_proportion_k_means_random')
     # DBSCAN
     cs.sampling_all_data(sql_con.engine, dbdata, data_sum, sample_sum, 'all_dbscan_random')
     # OPTICS
@@ -173,11 +173,14 @@ def get_error_rate():
         name = name.split('.')
         name = name[1]
         res_dict.clear()
+        all_error = 0
         # 计算误差
         for i in result:
             stand = stand_res[i[1]]
             error = abs(stand - float(i[0])) / stand * 100
-            res_dict[i[1]] = error
+            res_dict[i[1]] = round(error, 6)
+            all_error = all_error + error
+        res_dict['all'] = all_error / len(result)
         t = res_dict.copy()
         return_dict[name] = t
     return return_dict
@@ -207,14 +210,15 @@ def write():
             count = count + 1
         next_place = ord(place) + 1
         place = chr(next_place)
-    save_name = 'air_result' + str(write_count) + '.xlsx'
+    save_name = 'result/' + str(sample_rate) + '%/air_result' + str(write_count) + '.xlsx'
     wb.save(save_name)
 
 
 def main():
     # incline 62256 63094
-    sql = 'select * from unknown_data.air where locationId=62256 or locationId=63094 or ' \
-          'locationId=64704 or locationId=62693;'
+    sql = 'select * from unknown_data.air ' \
+          'where locationId=62256 or locationId=63094  or locationId=62693 or locationId=64704 or locationId=66726 or '\
+          'locationId=64518 or locationId=63376 or locationId=62880 or locationId=66122 or locationId=62676;'
     sql_con.cursor.execute(sql)
     result = sql_con.cursor.fetchall()
     data = DataFrame(result, columns=['locationId', 'location', 'city', 'country', 'utc', 'local', 'parameter', 'value',
@@ -235,10 +239,14 @@ def main():
 
 
 if __name__ == '__main__':
-    sample_sum = 8000 # 4461
-    data_sum = 251722
+    sample_rate = 2
+    data_sum = 501850
+    sample_sum = data_sum * (sample_rate / 100)
     sql_con = sql_connect.Sql_c()
-    sql = 'select locationId, avg(value) from unknown_data.air where locationId=62256 or locationId=63094  or locationId=62693 or locationId=64704 group by locationId;'
+    sql = 'select locationId, avg(value) from unknown_data.air ' \
+          'where locationId=62256 or locationId=63094  or locationId=62693 or locationId=64704 or locationId=66726 or '\
+          'locationId=64518 or locationId=63376 or locationId=62880 or locationId=66122 or locationId=62676 ' \
+          'group by locationId;'
     sql_con.cursor.execute(sql)
     res = sql_con.cursor.fetchall()
     stand_res = {}
@@ -246,8 +254,10 @@ if __name__ == '__main__':
     for i in res:
         stand_res[i[0]] = float(i[1])
     write_count = 1
-    for i in range(1):
+    for i in range(10):
         main()
         res_dict = get_error_rate()
         write()
         write_count += 1
+        # sample_rate += 2
+        sample_sum = data_sum * (sample_rate / 100)
