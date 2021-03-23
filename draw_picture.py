@@ -107,14 +107,9 @@ def draw_unknown_data(data_type, table_sum):
     df = df / table_sum
     # 便于画图把误差超过100的规定为100 使用change函数
     df['K-MEANS'] = df['K-MEANS'].apply(lambda x: change(x))
-    df['proportion_K-MEANS'] = df['proportion_K-MEANS'].apply(lambda x: change(x))
     df['DBSCAN'] = df['DBSCAN'].apply(lambda x: change(x))
-    # df['proportion_DBSCAN'] = df['proportion_DBSCAN'].apply(lambda x: change(x))
     df['OPTICS'] = df['OPTICS'].apply(lambda x: change(x))
-    # df['proportion_OPTICS'] = df['proportion_OPTICS'].apply(lambda x: change(x))
     df['RANDOM'] = df['RANDOM'].apply(lambda x: change(x))
-    # 删除掉表现过于糟糕的k-means
-    df.drop(['K-MEANS'], axis=1, inplace=True)
     print(df)
     df.plot(figsize=(20, 8))
     plt.show()
@@ -159,7 +154,7 @@ def k_to_k_means():
 def draw_statistics():
     file_path = 'statistics_result.csv'
     df = read_csv(file_path)
-    df.drop(['all_k_means_random', 'group_k_means_random'], axis=1, inplace=True)
+    df.drop(['all_k_means_random', 'group_k_means_random', 'group_dbscan_random', 'group_optics_random', 'group_proportion_k_means_random'], axis=1, inplace=True)
     df.plot(figsize=(20, 8))
     plt.show()
 
@@ -167,5 +162,5 @@ def draw_statistics():
 if __name__ == '__main__':
     # draw_statistics()
     # k_to_k_means()
-    draw_unknown_data('air_incline', 10)
+    draw_unknown_data('incline', 10)
     # draw_air()

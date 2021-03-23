@@ -1,4 +1,5 @@
 import re
+import time
 import numpy as np
 import sql_connect  # 自写库sql连接
 import cluster_sample_algorithm as csa  # 自写库
@@ -26,7 +27,7 @@ def group_random(data):
     for locationid in locations:
         small_data = data.loc[data['locationId'] == locationid]
         data_length = len(small_data)
-        sam_sum = sample_sum * data_length / data_sum
+        sam_sum = sample_sum * (data_length / data_sum)
         sam = sam_sum / data_length
         sample = small_data.sample(frac=sam, replace=False, axis=0)
         store_df = store_df.append(sample, ignore_index=True)
@@ -47,7 +48,7 @@ def cluster(data):
     for i in arr:
         values.append((i, 0))
     arr = np.array(values)
-    cluster = KMeans(n_clusters=10).fit(arr)
+    cluster = KMeans(n_clusters=3).fit(arr)
     k_means_layer = get_cluster(cluster, values)
     dbscan_layer = csa.DBSCAN(same_data, Eps=0.403, MinPts=200)
     optics_layer = csa.OPTICS(same_data, Eps=0.403, MinPts=200)
@@ -215,31 +216,19 @@ def write():
 
 
 def main():
-    # incline 62256 63094
-    sql = 'select * from unknown_data.air ' \
-          'where locationId=62256 or locationId=63094  or locationId=62693 or locationId=64704 or locationId=66726 or '\
-          'locationId=64518 or locationId=63376 or locationId=62880 or locationId=66122 or locationId=62676;'
-    sql_con.cursor.execute(sql)
-    result = sql_con.cursor.fetchall()
-    data = DataFrame(result, columns=['locationId', 'location', 'city', 'country', 'utc', 'local', 'parameter', 'value',
-                                      'unit', 'latitude', 'longitude', 'id'])
-    data = data.drop(['id'], axis=1)
-    # 设置value类数据类型不然会报错
-    data['value'] = data['value'].astype('float')
     # 进行各种抽样查询
     print('all_random')
     all_random(data)
     print('group_random')
     group_random(data)
     print('all_cluster')
-    dbdata, opdata, kmdata = cluster(data)
     all_cluster(dbdata, opdata, kmdata)
     print('group_cluster')
     group_cluster(data)
 
 
 if __name__ == '__main__':
-    sample_rate = 2
+    sample_rate = 10
     data_sum = 501850
     sample_sum = data_sum * (sample_rate / 100)
     sql_con = sql_connect.Sql_c()
@@ -253,6 +242,19 @@ if __name__ == '__main__':
     # 计算标准结果
     for i in res:
         stand_res[i[0]] = float(i[1])
+    # incline 62256 63094
+    sql = 'select * from unknown_data.air ' \
+          'where locationId=62256 or locationId=63094  or locationId=62693 or locationId=64704 or locationId=66726 or ' \
+          'locationId=64518 or locationId=63376 or locationId=62880 or locationId=66122 or locationId=62676;'
+    sql_con.cursor.execute(sql)
+    result = sql_con.cursor.fetchall()
+    data = DataFrame(result,
+                     columns=['locationId', 'location', 'city', 'country', 'utc', 'local', 'parameter', 'value',
+                              'unit', 'latitude', 'longitude', 'id'])
+    data = data.drop(['id'], axis=1)
+    # 设置value类数据类型不然会报错
+    data['value'] = data['value'].astype('float')
+    dbdata, opdata, kmdata = cluster(data)
     write_count = 1
     for i in range(10):
         main()

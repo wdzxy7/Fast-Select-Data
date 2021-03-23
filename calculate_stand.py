@@ -31,20 +31,18 @@ def air_statistics():
     df_list = get_data('air', 10)
     index = df_list[0]['Unnamed: 0']
     index = list(index)
-    count_high_error(df_list)
-    # count_incline_error(df_list)
-    return None
     # 存放每个locationid的数据
     data_dict = {}
+    indexs = list(df_list[0].columns)
+    del indexs[0]
     for i in index:
-        column = list(df_list[0].columns)
-        del column[0]
-        data_dict[i] = DataFrame([], columns=column)
+        data_dict[i] = DataFrame([], columns=indexs)
     df_index = data_dict.keys()
     for df in df_list:
         df.drop('Unnamed: 0', axis=1, inplace=True)
         print(df)
         print(df_index)
+        # y轴索引
         df.index = df_index
         column_count = 0
         # 把这个dataframe的每个locationid行拆分出来
@@ -52,7 +50,7 @@ def air_statistics():
             t_data = df.iloc[column_count]
             arr = np.array(t_data)
             arr = arr.reshape(1, len(arr))
-            t_df = DataFrame(arr, columns=column)
+            t_df = DataFrame(arr, columns=indexs)
             data_dict[key] = data_dict[key].append(t_df.copy(), ignore_index=True)
             column_count += 1
     mean_df = DataFrame()
@@ -64,7 +62,7 @@ def air_statistics():
         res = m.iloc[1]
         arr = np.array(res)
         arr = arr.reshape(1, len(arr))
-        t_df = DataFrame(arr, columns=column, index=[key])
+        t_df = DataFrame(arr, columns=df_list[0].columns, index=[key])
         mean_df = mean_df.append(t_df.copy())
         # 存储每个locationid的科学家计算结果
         save_name = 'result/' + str(percentage) + '%/' + str(key) + 'statistics.csv'
@@ -72,6 +70,8 @@ def air_statistics():
     # 把上述循环的结果汇总到一个表
     mean_df.to_csv('result/' + str(percentage) + '%/all_statistics_' + str(percentage) + '%.csv')
     print(mean_df)
+    count_high_error(df_list)
+    count_incline_error(df_list)
 
 
 def cluster_statistics(data_type, table_sum):
@@ -110,32 +110,18 @@ def cluster_statistics(data_type, table_sum):
         m.to_csv(save_name)
 
 
-def read_all_statistics():
-    all_data = DataFrame()
-    for percentage in range(2, 12, 2):
-        path = 'result/' + str(percentage) + '%/all_statistics_' + str(percentage) + '%.csv'
-        df = read_csv(path)
-        all_sta = df.iloc[10]
-        arr = np.array(all_sta)
-        arr = arr.reshape(1, len(arr))
-        all_mean = DataFrame(arr, columns=df.columns)
-        all_data = all_data.append(all_mean)
-    all_data.drop('Unnamed: 0', axis=1, inplace=True)
-    all_data.to_csv('statistics_result.csv', index=False)
-
-
 # 以抽样方法为单位进行数学统计
 # 计算该抽样下，所有数据的每项的平均值，以及总体的平均值
 def count_high_error(df_list):
     dfs = df_list.copy()
     columns = list(dfs[0].columns)
-    del columns[0]
+    # del columns[0]
     count_dict = {}
     all_data = DataFrame()
     # 遍历每个dataframe的每一列，计算每一种抽样方式下的高误差数量
     for df in dfs:
-        df.drop('Unnamed: 0', axis=1, inplace=True)
-        df.drop(10, axis=0, inplace=True)
+        # df.drop('Unnamed: 0', axis=1, inplace=True)
+        df.drop(index='all', axis=0, inplace=True)
         all_data = all_data.append(df, ignore_index=True)
         df = df.astype('float64')
         for column in columns:
@@ -163,27 +149,37 @@ def count_high_error(df_list):
     des.to_csv(save_name)
 
 
-# 针对倾斜数据进行单独统计
+# 针对倾斜数据进行单独统计,只求平均值
 def count_incline_error(df_list):
     dfs = df_list.copy()
-    columns = list(dfs[0].columns)
-    del columns[0]
     count_dict = {63094: DataFrame()}
     for df in dfs:
-        df.drop('Unnamed: 0', axis=1, inplace=True)
         count_dict[63094] = count_dict[63094].append(df.iloc[4], ignore_index=True)
     for key in count_dict.keys():
         df = count_dict[key]
         print(df)
         des = df.describe()
         des.drop(['std', '25%', '50%', '75%', 'count', 'min', 'max'], inplace=True)
-        des.drop(['group_dbscan_random', 'group_optics_random', 'group_k_means_random',
-                  'group_proportion_k_means_random', 'all_k_means_random'], axis=1, inplace=True)
+        des.drop(['group_k_means_random', 'all_k_means_random'], axis=1, inplace=True)
         des.to_csv('result/' + str(percentage) + '%/incline' + str(percentage) + '%.csv')
 
 
+def read_all_statistics():
+    all_data = DataFrame()
+    for percentage in range(2, 12, 2):
+        path = 'result/' + str(percentage) + '%/all_statistics_' + str(percentage) + '%.csv'
+        df = read_csv(path)
+        all_sta = df.iloc[10]
+        arr = np.array(all_sta)
+        arr = arr.reshape(1, len(arr))
+        all_mean = DataFrame(arr, columns=df.columns)
+        all_data = all_data.append(all_mean)
+    all_data.drop('Unnamed: 0', axis=1, inplace=True)
+    all_data.to_csv('statistics_result.csv', index=False)
+
+
 if __name__ == '__main__':
-    percentage = 2
+    percentage = 10
     # 数据测试规模，循环变量
     run_range = {
         'air': [10000, 90001, 10000],

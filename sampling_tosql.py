@@ -8,27 +8,33 @@ import fsspec
 
 
 if __name__ == '__main__':
-    engine = create_engine('mysql+pymysql://root:@localhost:3308/grades', encoding='utf8')
+    engine = create_engine('mysql+pymysql://root:@localhost:3308/unknown_data', encoding='utf8')
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
-    '''
-    for sample_num in range(1, 12):
-        break
-        sql = 'TRUNCATE TABLE grades.sample' + str(sample_num) + ';'
+
+    sql = 'select * from unknown_data.air;'
+    df = pd.read_sql(sql, con=engine)
+    for proportion in range(1, 4):
+        sql = 'TRUNCATE TABLE unknown_data.small_test;'
         cursor.execute(sql)
-    '''
-    time.process_time()
-    t1 = time.process_time()
-    print(t1)
-    sql = 'select * from transcript_balanced;'
-    data = pd.read_sql(sql, con=engine)
-    print(data)
-    df = DataFrame(data, columns=['id', 'major', 'term', 'score', 'year'])
-    sams = [0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
-    for number in range(6):
-        sam = sams[number]
-        table_name = 'sample_' + str(sam * 100)
-        print(table_name)
-        df_sample = df.sample(frac=sam, replace=False, axis=0)
-        df_sample.to_sql(table_name, con=engine, if_exists='append', index=False, chunksize=100000)
-    print(t1)
+        df_sample = df.sample(frac=proportion / 100, replace=False, axis=0)
+        df_sample.to_sql('small_test', con=engine, if_exists='append', index=False, chunksize=100000)
+        sql = 'SELECT country,parameter, avg(`value`) FROM unknown_data.air GROUP BY country, parameter;'
+        cursor.execute(sql)
+        res = cursor.fetchall()
+        stand_res = {}
+        # 计算标准结果
+        for i in res:
+            stand_res[(i[0], i[1])] = float(i[2])
+        sql = 'SELECT country,parameter, avg(`value`) FROM unknown_data.small_test GROUP BY country, parameter;'
+        cursor.execute(sql)
+        res = cursor.fetchall()
+        sample_result = {}
+        for i in res:
+            sample_result[(i[0], i[1])] = float(i[2])
+        for key in sample_result.keys():
+            stand = stand_res[key]
+            test = sample_result[key]
+            error = abs(stand - test) / stand * 100
+            print(key, error)
+        print('----------------------------------------------')

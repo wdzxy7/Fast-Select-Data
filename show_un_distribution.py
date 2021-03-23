@@ -6,7 +6,7 @@ import numpy as np
 def show():
     plt.figure(figsize=(40, 8))
     arr = np.array(t_data)
-    plt.hist(arr, bins=100)
+    plt.hist(arr, bins=200)
     '''
     x = [j for j in range(0, 1000, 10)]
     plt.xticks(x)
@@ -28,6 +28,7 @@ if __name__ == '__main__':
     # sql = 'select score from unknown_data.data' + str(num) + ';'
     # sql = 'SELECT score FROM unknown_data.data3 WHERE `index`=21021002103010031321 ORDER BY score ASC;'
     sql = 'SELECT `value` FROM unknown_data.air WHERE locationId=63094;'
+    # sql = 'select value from unknown_data.air where country=\'IE\' and parameter=\'pm10\' group by value;'
     cursor.execute(sql)
     res = cursor.fetchall()
     print(res)

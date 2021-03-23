@@ -63,19 +63,21 @@ def real_data_test(data_type):
     MinPts = parameter[data_type][1]
     sql_con = sql_connect.Sql_c()
     # 测试sql
-    t_sql1 = 'select avg(score) from unknown_data.k_means_result;'
-    t_sql2 = 'select avg(score) from unknown_data.proportion_k_means_result;'
-    t_sql3 = 'select avg(score) from unknown_data.dbscan_result;'
-    t_sql4 = 'select avg(score) from unknown_data.optics_result;'
-    t_sql5 = 'select avg(score) from unknown_data.random_result;'
-    test_sql = [t_sql1, t_sql2, t_sql3, t_sql4, t_sql5]
+    t_sql1 = 'select avg(score) from unknown_data.proportion_k_means_result;'
+    # t_sql2 = 'select avg(score) from unknown_data.dbscan_result;'
+    # t_sql3 = 'select avg(score) from unknown_data.optics_result;'
+    t_sql2 = 'select avg(score) from unknown_data.proportion_dbscan_result;'
+    t_sql3 = 'select avg(score) from unknown_data.proportion_optics_result;'
+    t_sql4 = 'select avg(score) from unknown_data.random_result;'
+    test_sql = [t_sql1, t_sql2, t_sql3, t_sql4]
     # 清表sql
-    sql1 = 'TRUNCATE TABLE unknown_data.optics_result;'
-    sql2 = 'TRUNCATE TABLE unknown_data.dbscan_result;'
+    # sql1 = 'TRUNCATE TABLE unknown_data.optics_result;'
+    # sql2 = 'TRUNCATE TABLE unknown_data.dbscan_result;'
+    sql1 = 'TRUNCATE TABLE unknown_data.proportion_optics_result;'
+    sql2 = 'TRUNCATE TABLE unknown_data.proportion_dbscan_result;'
     sql3 = 'TRUNCATE TABLE unknown_data.random_result;'
-    sql4 = 'TRUNCATE TABLE unknown_data.k_means_result;'
-    sql5 = 'TRUNCATE TABLE unknown_data.proportion_k_means_result;'
-    clear_sql = [sql1, sql2, sql3, sql4, sql5]
+    sql4 = 'TRUNCATE TABLE unknown_data.proportion_k_means_result;'
+    clear_sql = [sql1, sql2, sql3, sql4]
     sql = select_count_sql[data_type]
     sql_con.cursor.execute(sql)
     res = sql_con.cursor.fetchall()
@@ -122,17 +124,21 @@ def real_data_test(data_type):
         for sql in clear_sql:
             sql_con.cursor.execute(sql)
         # K-MEANS
-        csa.sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'k_means_result')
+        # csa.sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'k_means_result')
         # csa.avg_sampling_data(sql_con.engine, kmdata, data_sum, sample_sum, 'avg_k_means_result')
         csa.proportion_sample_data(sql_con.engine, kmdata, data_sum, sample_sum, 'proportion_k_means_result')
         # DBSCAN
-        csa.sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'dbscan_result')
+        # 公式计算抽取
+        # csa.sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'dbscan_result')
         # csa.avg_sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'avg_dbscan_result')
-        # csa.proportion_sample_data(sql_con.engine, dbdata, data_sum, sample_sum, 'proportion_dbscan_result')
+        # 按比例抽取
+        csa.proportion_sample_data(sql_con.engine, dbdata, data_sum, sample_sum, 'proportion_dbscan_result')
         # OPTICS
-        csa.sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'optics_result')
+        # 公式计算抽取
+        # csa.sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'optics_result')
         # csa.avg_sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'avg_optics_result')
-        # csa.proportion_sample_data(sql_con.engine, opdata, data_sum, sample_sum, 'proportion_optics_result')
+        # 按比例抽取
+        csa.proportion_sample_data(sql_con.engine, opdata, data_sum, sample_sum, 'proportion_optics_result')
         # RANDOM
         df_sample = data.sample(frac=sample_sum / data_sum, replace=False, axis=0)
         df_sample.to_sql('random_result', con=sql_con.engine, if_exists='append', index=False, chunksize=100000)
@@ -146,7 +152,7 @@ def real_data_test(data_type):
         t = t_result.copy()
         test_result.append(t)
     # 存储结果
-    columns_list = ['K-MEANS', 'proportion_K-MEANS', 'DBSCAN', 'OPTICS', 'RANDOM']
+    columns_list = ['K-MEANS', 'DBSCAN', 'OPTICS', 'RANDOM']
     df = DataFrame(test_result, columns=columns_list)
     # df.index = ind
     print(df)
@@ -176,7 +182,7 @@ if __name__ == '__main__':
         'air': [1, 15],
         'incline': [0.0022, 7],
         'air_incline': [0.111, 10],
-        'incline2': [1.001, 6]
+        'incline2': [1.001, 7]
     }
     # 标准平均值
     stand_avg = {
@@ -190,5 +196,5 @@ if __name__ == '__main__':
     # 测试次数
     run_times = 10
     for k in range(run_times):
-        real_data_test('air_incline')
+        real_data_test('incline')
         write_count += 1
