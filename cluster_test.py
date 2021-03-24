@@ -8,31 +8,18 @@ import time
 
 # 测试eps 和 minpts取值
 def test1():
-    eps = 0.403
-    minpts = 200
-    sql = 'select value, count(value) from unknown_data.air where locationId=62256 or locationId=62880 or ' \
-          'locationId=63094 or locationId=66355 or locationId=64704 or locationId=62693 group by value;'
+    eps = 5.01
+    minpts = 2
+    sql = 'select value, count(value) from unknown_data.air where locationId=7990 group by value;'
     sql_con = sql_connect.Sql_c()
     sql_con.cursor.execute(sql)
     res = sql_con.cursor.fetchall()
     same_data = {}
     for i in res:
         same_data[float(i[0])] = int(i[1])
-    costs = []
-    for i in range(10):
-        print(i)
-        t1 = time.perf_counter()
-        dbscan_layer = st.OPTICS(same_data, Eps=eps, MinPts=minpts)
-        t2 = time.perf_counter()
-        cost = t2 - t1
-        costs.append(cost)
-    df = DataFrame(costs)
-    des = df.describe()
-    des.to_csv('time_cost2.csv')
-    '''
-    for i in dbscan_layer:
-        print(sorted(i))
-    '''
+    dbscan_layer = st.DBSCAN(same_data, Eps=eps, MinPts=minpts)
+    for lay in dbscan_layer:
+        print(lay)
 
 
 def test2():

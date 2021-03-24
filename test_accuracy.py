@@ -1,6 +1,9 @@
 import pymysql
+import numpy as np
 from pandas import DataFrame
 from decimal import Decimal
+import four_function_sampling as ffs
+from sklearn.cluster import KMeans
 import cluster_sample_algorithm as csa
 import sql_connect
 
@@ -64,17 +67,17 @@ def real_data_test(data_type):
     sql_con = sql_connect.Sql_c()
     # 测试sql
     t_sql1 = 'select avg(score) from unknown_data.proportion_k_means_result;'
-    # t_sql2 = 'select avg(score) from unknown_data.dbscan_result;'
-    # t_sql3 = 'select avg(score) from unknown_data.optics_result;'
-    t_sql2 = 'select avg(score) from unknown_data.proportion_dbscan_result;'
-    t_sql3 = 'select avg(score) from unknown_data.proportion_optics_result;'
+    t_sql2 = 'select avg(score) from unknown_data.dbscan_result;'
+    t_sql3 = 'select avg(score) from unknown_data.optics_result;'
+    # t_sql2 = 'select avg(score) from unknown_data.proportion_dbscan_result;'
+    # t_sql3 = 'select avg(score) from unknown_data.proportion_optics_result;'
     t_sql4 = 'select avg(score) from unknown_data.random_result;'
     test_sql = [t_sql1, t_sql2, t_sql3, t_sql4]
     # 清表sql
-    # sql1 = 'TRUNCATE TABLE unknown_data.optics_result;'
-    # sql2 = 'TRUNCATE TABLE unknown_data.dbscan_result;'
-    sql1 = 'TRUNCATE TABLE unknown_data.proportion_optics_result;'
-    sql2 = 'TRUNCATE TABLE unknown_data.proportion_dbscan_result;'
+    sql1 = 'TRUNCATE TABLE unknown_data.optics_result;'
+    sql2 = 'TRUNCATE TABLE unknown_data.dbscan_result;'
+    # sql1 = 'TRUNCATE TABLE unknown_data.proportion_optics_result;'
+    # sql2 = 'TRUNCATE TABLE unknown_data.proportion_dbscan_result;'
     sql3 = 'TRUNCATE TABLE unknown_data.random_result;'
     sql4 = 'TRUNCATE TABLE unknown_data.proportion_k_means_result;'
     clear_sql = [sql1, sql2, sql3, sql4]
@@ -84,10 +87,21 @@ def real_data_test(data_type):
     same_data = {}
     for i in res:
         same_data[float(i[0])] = int(i[1])
+    # 查询数据
+    sql = select_data_sql[data_type]
+    sql_con.cursor.execute(sql)
+    sql_result = sql_con.cursor.fetchall()
+    data = DataFrame(sql_result, columns=['score']).astype('float')
+    arr = data['score']
+    values = []
+    for i in arr:
+        values.append((i, 0))
+    arr = np.array(values)
+    cluster = KMeans(n_clusters=3).fit(arr)
     # 聚类分层
+    k_means_layer = ffs.get_cluster(cluster, values)
     optics_layer = csa.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
     dbscan_layer = csa.DBSCAN(same_data, Eps=Eps, MinPts=MinPts)
-    k_means_layer = csa.k_means_three(list(same_data.keys()))
     print('DBSCAN:')
     for i in dbscan_layer:
         print(sorted(i))
@@ -97,11 +111,6 @@ def real_data_test(data_type):
     print('K-MEANS:')
     for i in k_means_layer:
         print(sorted(i))
-    # 查询数据
-    sql = select_data_sql[data_type]
-    sql_con.cursor.execute(sql)
-    sql_result = sql_con.cursor.fetchall()
-    data = DataFrame(sql_result, columns=['score']).astype('float')
     # 数据分层
     opdata = csa.spilt_data_by_layer(optics_layer, data)
     dbdata = csa.spilt_data_by_layer(dbscan_layer, data)
@@ -129,16 +138,16 @@ def real_data_test(data_type):
         csa.proportion_sample_data(sql_con.engine, kmdata, data_sum, sample_sum, 'proportion_k_means_result')
         # DBSCAN
         # 公式计算抽取
-        # csa.sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'dbscan_result')
+        csa.sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'dbscan_result')
         # csa.avg_sampling_data(sql_con.engine, dbdata, data_sum, sample_sum, 'avg_dbscan_result')
         # 按比例抽取
-        csa.proportion_sample_data(sql_con.engine, dbdata, data_sum, sample_sum, 'proportion_dbscan_result')
+        # csa.proportion_sample_data(sql_con.engine, dbdata, data_sum, sample_sum, 'proportion_dbscan_result')
         # OPTICS
         # 公式计算抽取
-        # csa.sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'optics_result')
+        csa.sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'optics_result')
         # csa.avg_sampling_data(sql_con.engine, opdata, data_sum, sample_sum, 'avg_optics_result')
         # 按比例抽取
-        csa.proportion_sample_data(sql_con.engine, opdata, data_sum, sample_sum, 'proportion_optics_result')
+        # csa.proportion_sample_data(sql_con.engine, opdata, data_sum, sample_sum, 'proportion_optics_result')
         # RANDOM
         df_sample = data.sample(frac=sample_sum / data_sum, replace=False, axis=0)
         df_sample.to_sql('random_result', con=sql_con.engine, if_exists='append', index=False, chunksize=100000)
@@ -147,7 +156,7 @@ def real_data_test(data_type):
             sql_con.cursor.execute(test)
             result = sql_con.cursor.fetchall()
             avg = round(float(result[0][0]), 6)
-            accuracy = round(abs(avg - stand) / stand * 100, 6)
+            accuracy = round(abs(avg - stand) / abs(stand) * 100, 6)
             t_result.append(accuracy)
         t = t_result.copy()
         test_result.append(t)
@@ -166,14 +175,14 @@ if __name__ == '__main__':
         'air': 'select value from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\'',
         'incline': 'select score from unknown_data.data3 where `index`=22021001101410011321;',
         'air_incline': 'select value from unknown_data.air where locationId=63094;',
-        'incline2': 'select score from unknown_data.data3 where `index`=21021003104010031120;'
+        'incline2': 'select value from unknown_data.air where locationId=8172;'
     }
     # 查询数据分布sql
     select_count_sql = {
         'air': 'select value, count(value) from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;',
         'incline': 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;',
         'air_incline': 'select value, count(value) from unknown_data.air where locationId=63094 group by value;',
-        'incline2': 'select score, count(score) from unknown_data.data3 where `index`=21021003104010031120 group by score;'
+        'incline2': 'select value, count(value) from unknown_data.air where locationId=8172 group by value;'
     }
     # 循环设置
     run_range = [5, 51, 5]
@@ -182,19 +191,19 @@ if __name__ == '__main__':
         'air': [1, 15],
         'incline': [0.0022, 7],
         'air_incline': [0.111, 10],
-        'incline2': [1.001, 7]
+        'incline2': [0.31, 100]
     }
     # 标准平均值
     stand_avg = {
         'incline': 0.000389,
         'air': 3.97103,
         'air_incline': 0.0177754,
-        'incline2': 0.137269
+        'incline2': -42.2348332
     }
     # 写入文件编号
     write_count = 1
     # 测试次数
     run_times = 10
     for k in range(run_times):
-        real_data_test('incline')
+        real_data_test('incline2')
         write_count += 1

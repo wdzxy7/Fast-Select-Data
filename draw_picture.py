@@ -162,5 +162,5 @@ def draw_statistics():
 if __name__ == '__main__':
     # draw_statistics()
     # k_to_k_means()
-    draw_unknown_data('incline', 10)
+    draw_unknown_data('incline2', 10)
     # draw_air()

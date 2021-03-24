@@ -142,7 +142,8 @@ def spilt_data_by_layer(layer, data_df):
         specimen = data_df.loc[(data_df['score'] <= max(lay)) & (data_df['score'] >= min(lay)), :]
         temp_df = temp_df.append(specimen, ignore_index=True)
         t_df = temp_df.copy(deep=True)
-        return_df.append(t_df)
+        if len(t_df) != 0:
+            return_df.append(t_df)
         temp_df.drop(temp_df.index, inplace=True)
         temp_df.columns = ['score']
     return return_df
@@ -171,7 +172,11 @@ def sampling_data(engine, df_list, data_sum, sample_sum, database):
             specimen = sample_sum * len(df) / data_sum
         if specimen == 0:
             specimen = sample_sum * len(df) / data_sum
-        sam = float(specimen) / len(df)
+        try:
+            sam = float(specimen) / len(df)
+        except:
+            continue
+        # print(df.iloc[0], specimen, molecular, denominator)
         if sam > 1:
             sam = 1
         if sam < 0:
@@ -494,6 +499,7 @@ def DBSCAN(same_data, Eps=0.0022, MinPts=8):
     ct_cores = y_core.keys()  # 核心点集
     ct_cores = list(set(ct_cores))
     # 聚类
+    extend_point = set()
     while len(ct_cores) != 0:
         core = ct_cores[0]
         del ct_cores[0]
@@ -511,6 +517,8 @@ def DBSCAN(same_data, Eps=0.0022, MinPts=8):
                     now_class = now_class | set(core_friend)
                 except:  # 非核心点
                     now_class.add(point)
+        now_class = set(now_class) - extend_point
+        extend_point = extend_point | set(now_class)
         class_list.append(now_class)
         ct_cores = list(set(ct_cores) - now_class)
     return class_list

@@ -1,20 +1,21 @@
 import numpy as np
 import pymysql
 from sklearn.cluster import DBSCAN,KMeans,OPTICS
-import single_test as st
+import cluster_sample_algorithm as st
 
 # 调用官方库验证自卸算法是否正确
 
 if __name__ == '__main__':
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
     cursor = connect.cursor()
-    sql = 'select value from unknown_data.air where locationId=63094;'
+    sql = 'select value from unknown_data.air where locationId=2536;'
     cursor.execute(sql)
     result = cursor.fetchall()
     data = []
     for i in result:
         data.append((float(i[0]), 0))
     arr = np.array(data)
+    '''
     sql = 'select value, count(value) from unknown_data.air where locationId=63094 group by value;'
     cursor.execute(sql)
     res = cursor.fetchall()
@@ -25,8 +26,9 @@ if __name__ == '__main__':
     print('DBSCAN:')
     for i in dbscan_layer:
         print(sorted(i))
+    '''
 
-    cluster = DBSCAN(eps=0.4, min_samples=10).fit(arr)
+    cluster = DBSCAN(eps=0.3, min_samples=100).fit(arr)
     # cluster = KMeans(n_clusters=10).fit(arr)
     # cluster = OPTICS(min_samples=7, max_eps=0.0022).fit(arr)
     result = []
