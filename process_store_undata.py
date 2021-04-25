@@ -48,6 +48,7 @@ class Run(Process):
             cursor.executemany(sql, data)
         cursor.close()
 
+    # 把该文件进行拆分存储。
     def split_txt(self, txt, name):
         datas = []
         for small_data in txt:
@@ -68,6 +69,7 @@ class Run(Process):
         return datas
 
     @staticmethod
+    # 对每个小list数据进行修改更改时间戳
     def zip_data(name, small_data):
         small_data[0] = name
         small_data[2] = small_data[2].replace('.000', '')
@@ -86,14 +88,17 @@ class Run(Process):
 def main():
     global file_sum
     files = []
+    # 读取文件
     for root, dirs, file in os.walk('./data/all_data'):
         files = file
+    # 设置一个sql装多少个文件
     file_sum = len(files)
     front = 0
     back = 249
     process_name = []
     file_list = []
     count = 1
+    # 12949是总文件个数
     while back <= 12949:
         process_name.append('process' + str(count))
         count = count + 1
@@ -107,6 +112,7 @@ def main():
             back = 12949
     process_list = []
     print(process_name)
+    # 运行进程
     for file, p_name in zip(file_list, process_name):
         p = Run(file, file_dict, num, executed, file_sum, lock, p_name)
         process_list.append(p)

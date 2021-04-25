@@ -97,7 +97,7 @@ def real_data_test(data_type):
     for i in arr:
         values.append((i, 0))
     arr = np.array(values)
-    cluster = KMeans(n_clusters=3).fit(arr)
+    cluster = KMeans(n_clusters=4).fit(arr)
     # 聚类分层
     k_means_layer = ffs.get_cluster(cluster, values)
     optics_layer = csa.OPTICS(same_data, Eps=Eps, MinPts=MinPts)
@@ -174,15 +174,13 @@ if __name__ == '__main__':
     select_data_sql = {
         'air': 'select value from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\'',
         'incline': 'select score from unknown_data.data3 where `index`=22021001101410011321;',
-        'air_incline': 'select value from unknown_data.air where locationId=63094;',
-        'incline2': 'select value from unknown_data.air where locationId=8172;'
+        'air_incline': 'select value from unknown_data.air where locationId=7988;',
     }
     # 查询数据分布sql
     select_count_sql = {
         'air': 'select value, count(value) from unknown_data.air WHERE parameter = \'pm1\' and country = \'US\' group by value;',
         'incline': 'select score, count(score) from unknown_data.data3 where `index`=22021001101410011321 group by score;',
-        'air_incline': 'select value, count(value) from unknown_data.air where locationId=63094 group by value;',
-        'incline2': 'select value, count(value) from unknown_data.air where locationId=8172 group by value;'
+        'air_incline': 'select value, count(value) from unknown_data.air where locationId=7988 group by value;',
     }
     # 循环设置
     run_range = [5, 51, 5]
@@ -190,20 +188,18 @@ if __name__ == '__main__':
     parameter = {
         'air': [1, 15],
         'incline': [0.0022, 7],
-        'air_incline': [0.111, 10],
-        'incline2': [0.31, 100]
+        'air_incline': [20.01, 2]
     }
     # 标准平均值
     stand_avg = {
         'incline': 0.000389,
         'air': 3.97103,
-        'air_incline': 0.0177754,
-        'incline2': -42.2348332
+        'air_incline': 3.7755761
     }
     # 写入文件编号
     write_count = 1
     # 测试次数
     run_times = 10
     for k in range(run_times):
-        real_data_test('incline2')
+        real_data_test('incline')
         write_count += 1

@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from pandas import DataFrame
@@ -19,7 +20,7 @@ def get_data(data_type, table_sum):
 
 
 def read_csv(file_path):
-    data = pd.read_csv(file_path)
+    data = pd.read_csv(file_path, encoding='utf-8')
     df = DataFrame(data)
     return df
 
@@ -178,7 +179,29 @@ def read_all_statistics():
     all_data.to_csv('statistics_result.csv', index=False)
 
 
+def spilt_csv():
+    files = os.listdir('result_picture/')
+    del files[-1]
+    del files[-1]
+    df_list = []
+    for i in range(10):
+        df_list.append(DataFrame(columns=['id', 'K-MEANS', 'DBSCAN', 'OPTICS', 'RANDOM']))
+    for file in files:
+        name = file.replace('.csv', '')
+        df = read_csv('result_picture/' + file)
+        df.columns = ['id', 'K-MEANS', 'DBSCAN', 'OPTICS', 'RANDOM']
+        df['id'] = name
+        for i in range(10):
+            df_list[i] = df_list[i].append(df.iloc[i])
+    prop = 5
+    for i in range(len(df_list)):
+        df_list[i].to_csv('result_picture/' + str(prop) + '%.csv', index=False)
+        prop = prop + 5
+
+
+
 if __name__ == '__main__':
+
     percentage = 10
     # 数据测试规模，循环变量
     run_range = {
@@ -188,6 +211,7 @@ if __name__ == '__main__':
     }
     # cluster_statistics('incline', 10)
     # 单独分析每个抽样下不同抽样方法的结果
-    air_statistics()
+    # air_statistics()
     # 读取出air_statistics的所有结果，合成一张表
     # read_all_statistics()
+    spilt_csv()

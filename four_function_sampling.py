@@ -79,6 +79,7 @@ def all_cluster(dbdata, opdata, kmdata):
 
 # 把数据先分组然后进行组内的聚类运算抽样，每组抽样数量按比例分配
 def group_cluster(data):
+    global k_sum, op_sum, db_sum
     sql1 = 'TRUNCATE TABLE unknown_data.group_dbscan_random;'
     sql2 = 'TRUNCATE TABLE unknown_data.group_optics_random;'
     sql3 = 'TRUNCATE TABLE unknown_data.group_k_means_random;'
@@ -87,13 +88,50 @@ def group_cluster(data):
     for clear in clear_sql:
         sql_con.cursor.execute(clear)
     parameter = {
-        '62256': [0.2, 9],
-        '63094': [0.1001, 10],
+        '2536': [0.31, 100],
+        '63094': [0.411, 2],
+        '7674': [0.31, 100],
+        '7440': [23.01, 2],
+        '8172': [0.31, 100],
+        '4212': [0.31, 100],
+        '45008': [23.101, 3],
+        '7871': [3.01, 5],
+        '2741': [1.01, 4],
+        '2728': [1.01, 4],
+        '7024': [32.01, 4],
+        '2659': [1.01, 4],
+        '7875': [2.01, 8],
+        '8142': [2.01, 8],
+        '7983': [20.01, 3],
+        '7989': [20.01, 2],
+        '7990': [55.01, 2],
+        '7986': [20.1, 2],
+        '7988': [20.01, 2]
     }
     sqls = {
-        '62256': 'select avg(value), count(value) from unknown_data.air where locationId=62256 group by value;',
-        '63094': 'select avg(value), count(value) from unknown_data.air where locationId=63094 group by value;'
+        '2536': 'select avg(value), count(value) from unknown_data.air where locationId=2536 group by value;',
+        '63094': 'select avg(value), count(value) from unknown_data.air where locationId=63094 group by value;',
+        '7674': 'select avg(value), count(value) from unknown_data.air where locationId=7674 group by value;',
+        '7440': 'select avg(value), count(value) from unknown_data.air where locationId=7440 group by value;',
+        '8172': 'select avg(value), count(value) from unknown_data.air where locationId=8172 group by value;',
+        '4212': 'select avg(value), count(value) from unknown_data.air where locationId=4212 group by value;',
+        '45008': 'select avg(value), count(value) from unknown_data.air where locationId=45008 group by value;',
+        '7871': 'select avg(value), count(value) from unknown_data.air where locationId=7871 group by value;',
+        '2741': 'select avg(value), count(value) from unknown_data.air where locationId=2741 group by value;',
+        '2728': 'select avg(value), count(value) from unknown_data.air where locationId=2728 group by value;',
+        '7024': 'select avg(value), count(value) from unknown_data.air where locationId=7024 group by value;',
+        '2659': 'select avg(value), count(value) from unknown_data.air where locationId=2659 group by value;',
+        '7875': 'select avg(value), count(value) from unknown_data.air where locationId=7875 group by value;',
+        '8142': 'select avg(value), count(value) from unknown_data.air where locationId=8142 group by value;',
+        '7983': 'select avg(value), count(value) from unknown_data.air where locationId=7983 group by value;',
+        '7989': 'select avg(value), count(value) from unknown_data.air where locationId=7989 group by value;',
+        '7990': 'select avg(value), count(value) from unknown_data.air where locationId=7990 group by value;',
+        '7986': 'select avg(value), count(value) from unknown_data.air where locationId=7986 group by value;',
+        '7988': 'select avg(value), count(value) from unknown_data.air where locationId=7988 group by value;'
     }
+    k_time = []
+    db_time = []
+    op_time = []
     for key in parameter.keys():
         eps = parameter[key][0]
         minpts = parameter[key][1]
@@ -112,7 +150,8 @@ def group_cluster(data):
         for i in arr:
             values.append((i, 0))
         arr = np.array(values)
-        cluster = KMeans(n_clusters=10).fit(arr)
+
+        '''
         # 数据聚类运算
         k_means_layer = get_cluster(cluster, values)
         dbscan_layer = csa.DBSCAN(same_data, Eps=eps, MinPts=minpts)
@@ -129,6 +168,27 @@ def group_cluster(data):
         cs.sampling_all_data(sql_con.engine, dbdata, data_length, sample, 'group_dbscan_random')
         # OPTICS
         cs.sampling_all_data(sql_con.engine, opdata, data_length, sample, 'group_optics_random')
+        '''
+        t1 = time.perf_counter()
+        cluster = KMeans(n_clusters=10).fit(arr)
+        k_means_layer = get_cluster(cluster, values)
+        kmdata = cs.spilt_data_by_layer(k_means_layer, location_data)
+        cs.proportion_sample_data(sql_con.engine, kmdata, data_length, sample, 'group_proportion_k_means_random')
+        t2 = time.perf_counter()
+        dbscan_layer = csa.DBSCAN(same_data, Eps=eps, MinPts=minpts)
+        dbdata = cs.spilt_data_by_layer(dbscan_layer, location_data)
+        cs.sampling_all_data(sql_con.engine, dbdata, data_length, sample, 'group_dbscan_random')
+        t3 = time.perf_counter()
+        optics_layer = csa.OPTICS(same_data, Eps=eps, MinPts=minpts)
+        opdata = cs.spilt_data_by_layer(optics_layer, location_data)
+        cs.sampling_all_data(sql_con.engine, opdata, data_length, sample, 'group_optics_random')
+        t4 = time.perf_counter()
+        k_time.append(t2 - t1)
+        db_time.append(t3 - t2)
+        op_time.append(t4 - t3)
+    k_sum += sum(k_time)
+    op_sum += sum(op_time)
+    db_sum += sum(db_time)
 
 
 # 把调用官方k-means算法的结果转换出来
@@ -216,50 +276,71 @@ def write():
 
 
 def main():
+    '''
     # 进行各种抽样查询
+    t3 = time.perf_counter()
     print('all_random')
     all_random(data)
+    t4 = time.perf_counter()
+    print(t4 - t3)
+
     print('group_random')
     group_random(data)
+    t1 = time.perf_counter()
     print('all_cluster')
     all_cluster(dbdata, opdata, kmdata)
+    '''
     print('group_cluster')
     group_cluster(data)
 
 
+
 if __name__ == '__main__':
-    sample_rate = 10
-    data_sum = 501850
+    op_sum = 0
+    k_sum = 0
+    db_sum = 0
+    sample_rate = 5
+    # data_sum = 501850
+    data_sum = 10838742
     sample_sum = data_sum * (sample_rate / 100)
     sql_con = sql_connect.Sql_c()
+    # 计算标准结果
     sql = 'select locationId, avg(value) from unknown_data.air ' \
-          'where locationId=62256 or locationId=63094  or locationId=62693 or locationId=64704 or locationId=66726 or '\
-          'locationId=64518 or locationId=63376 or locationId=62880 or locationId=66122 or locationId=62676 ' \
-          'group by locationId;'
+          'where locationId=2536 or locationId=63094  or locationId=7674 or locationId=7440 or locationId=8172 or ' \
+          'locationId=4212 or locationId=45008 or locationId=7871 or locationId=2741 or locationId=2728' \
+          ' or locationId= 7024 or locationId= 2659 or locationId= 7875 or locationId= 8142 or locationId= 7983' \
+          ' or locationId= 7989 or locationId= 7990 or locationId= 7986 or locationId= 7988 group by locationId;'
     sql_con.cursor.execute(sql)
     res = sql_con.cursor.fetchall()
     stand_res = {}
-    # 计算标准结果
     for i in res:
         stand_res[i[0]] = float(i[1])
-    # incline 62256 63094
+    # 查询数据
     sql = 'select * from unknown_data.air ' \
-          'where locationId=62256 or locationId=63094  or locationId=62693 or locationId=64704 or locationId=66726 or ' \
-          'locationId=64518 or locationId=63376 or locationId=62880 or locationId=66122 or locationId=62676;'
+          'where locationId=2536 or locationId=63094  or locationId=7674 or locationId=7440 or locationId=8172 or ' \
+          'locationId=4212 or locationId=45008 or locationId=7871 or locationId=2741 or locationId=2728' \
+          ' or locationId= 7024 or locationId= 2659 or locationId= 7875 or locationId= 8142 or locationId= 7983' \
+          ' or locationId= 7989 or locationId= 7990 or locationId= 7986 or locationId= 7988;'
+    # t1 = time.process_time()
+    # sql = 'select * from unknown_data.air'
     sql_con.cursor.execute(sql)
     result = sql_con.cursor.fetchall()
+    # t2 = time.perf_counter()
+    # print(t2 - t1)
     data = DataFrame(result,
                      columns=['locationId', 'location', 'city', 'country', 'utc', 'local', 'parameter', 'value',
                               'unit', 'latitude', 'longitude', 'id'])
     data = data.drop(['id'], axis=1)
     # 设置value类数据类型不然会报错
     data['value'] = data['value'].astype('float')
-    dbdata, opdata, kmdata = cluster(data)
+    # dbdata, opdata, kmdata = cluster(data)
     write_count = 1
     for i in range(10):
         main()
+        continue
         res_dict = get_error_rate()
         write()
         write_count += 1
         # sample_rate += 2
         sample_sum = data_sum * (sample_rate / 100)
+    print(k_sum / 10, db_sum / 10, op_sum / 10)

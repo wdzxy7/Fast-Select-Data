@@ -1,38 +1,47 @@
-import matplotlib.pyplot as plt
 import pymysql
 import numpy as np
+import seaborn as sns
+from pylab import mpl
+import matplotlib
+from matplotlib.font_manager import FontProperties
+import matplotlib.pyplot as plt
+
+
+font = FontProperties(fname=r"c:\windows\fonts\SimHei.ttf", size=12)
 
 
 def show():
-    plt.figure(figsize=(40, 8))
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False
+    sns.set_style(style='white')
     arr = np.array(t_data)
-    plt.hist(arr, bins=200)
-    '''
-    x = [j for j in range(0, 1000, 10)]
-    plt.xticks(x)
-    '''
-    plt.title('15')
-    plt.show()
-    print(max(arr), min(arr))
+    # sns.distplot(arr, kde=True, hist=False, label=str(number), ax=
+    sns.distplot(arr, kde=True, hist=False)
+    plt.legend()
 
 
 if __name__ == '__main__':
-    connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
-    cursor = connect.cursor()
-    data = []
-    t_data = []
-    # for num in range(1, 36):
-    # print(num)-
-
-    t_data.clear()
-    # sql = 'select score from unknown_data.data' + str(num) + ';'
-    # sql = 'SELECT score FROM unknown_data.data3 WHERE `index`=21021002103010031321 ORDER BY score ASC;'
-    sql = 'SELECT `value` FROM unknown_data.air WHERE locationId=63094;'
-    # sql = 'select value from unknown_data.air where country=\'IE\' and parameter=\'pm10\' group by value;'
-    cursor.execute(sql)
-    res = cursor.fetchall()
-    print(res)
-    for i in res:
-        if float(i[0]) < 1000:
-            t_data.append(i[0])
-    show()
+    f, ax = plt.subplots(1, 1)
+    numbers = ['10001001100130001121', '10001002100130001321', '10011001100110031221', '10011001100110011221',
+               '10011002100110031221', '10011002100110031321', '10021001100110021421', '10021001100110021121',
+               '10031001100110031221', '10031001100110011421', '10031002100140001221', '10031002100110031221']
+    for number in numbers:
+        connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
+        cursor = connect.cursor()
+        data = []
+        t_data = []
+        # sql = 'select score from unknown_data.data' + str(num) + ';'
+        sql = 'SELECT score FROM unknown_data.data3 WHERE `index`=' + number + ';'
+        # sql = 'SELECT `value` FROM unknown_data.air WHERE locationId=' + number + ';'
+        # sql = 'select value from unknown_data.air where country=\'IE\' and parameter=\'pm10\' group by value;'
+        cursor.execute(sql)
+        res = cursor.fetchall()
+        print(res)
+        for i in res:
+            if -10 < float(i[0]) < 1000:
+                t_data.append(i[0])
+        print(len(t_data))
+        show()
+        plt.ylabel(u'密度', fontproperties=font)
+        plt.xlabel(u'取值', fontproperties=font)
+        plt.show()

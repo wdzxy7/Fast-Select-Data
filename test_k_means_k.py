@@ -1,7 +1,7 @@
 import numpy as np
 import sql_connect
 from pandas import DataFrame
-import single_test as st
+import cluster_sample_algorithm as st
 from sklearn.cluster import KMeans
 
 
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     sql8 = 'TRUNCATE TABLE unknown_data.proportion_k_means_result;'
     clear_sql = [sql8]
     sql_con = sql_connect.Sql_c()
-    sql = 'select score from unknown_data.data3 where `index`=22021001101410011321;'
+    sql = 'select value from unknown_data.air where locationId=7983;'
     sql_con.cursor.execute(sql)
     res = sql_con.cursor.fetchall()
     data = DataFrame(res, columns=['score']).astype('float')
@@ -43,11 +43,12 @@ if __name__ == '__main__':
     test_result = []
     t_result = []
     for i in range(1, 11):
-        for k in range(1, 11):
+        for k in range(2, 11):
             cluster = KMeans(n_clusters=k).fit(arr)
             k_means_layer = get_cluster(cluster, values)
             kmdata = st.spilt_data_by_layer(k_means_layer, data)
-            for sample_sum in range(1000, 15001, 1000):
+            for rate in range(5, 51, 5):
+                sample_sum = data_sum * rate / 100
                 t_result.clear()
                 # 清空数据表
                 for sql in clear_sql:
@@ -57,12 +58,12 @@ if __name__ == '__main__':
                     sql_con.cursor.execute(test)
                     result = sql_con.cursor.fetchall()
                     avg = round(float(result[0][0]), 6)
-                    accuracy = round(abs(avg - 0.000389) / 0.000389 * 100, 6)
+                    accuracy = round(abs(avg - 7.1809558) / 7.1809558 * 100, 6)
                     t_result.append(accuracy)
                 t = t_result.copy()
                 test_result.append(t)
             df = DataFrame(test_result, columns=['proportion_K-MEANS'])
             print(i, k)
-            path = 'result/k-means/k' + str(k) + '_Clustering_accuracy' + str(i) + '.csv'
+            path = 'result/k-means/k' + str(k) + '.10_Clustering_accuracy' + str(i) + '.csv'
             df.to_csv(path, index=False)
             test_result.clear()

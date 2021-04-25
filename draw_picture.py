@@ -1,6 +1,11 @@
+from matplotlib.pyplot import MultipleLocator
 import matplotlib.pyplot as plt
 from pandas import DataFrame
 import pandas as pd
+
+
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
 
 
 def get_data(file_path, proportion_list, sheet):
@@ -15,7 +20,7 @@ def draw_picture1(x_data, distribution):
     print(index)
     plt.title(distribution)
     plt.plot(x_data, color='red', linewidth=2.0, marker='*')
-    plt.show()
+    # plt.show()
 
 
 def get_sample_time(accuracy_path, name):
@@ -95,6 +100,7 @@ def change(x):
 
 
 def draw_unknown_data(data_type, table_sum):
+    # plt.figure(figsize=(20, 8))
     df = DataFrame()
     # 读取csv文件
     for i in range(1, table_sum + 1):
@@ -111,7 +117,20 @@ def draw_unknown_data(data_type, table_sum):
     df['OPTICS'] = df['OPTICS'].apply(lambda x: change(x))
     df['RANDOM'] = df['RANDOM'].apply(lambda x: change(x))
     print(df)
-    df.plot(figsize=(20, 8))
+    # df.drop(['DBSCAN', 'OPTICS'], axis=1, inplace=True)
+    df.index = ['5', '10', '15', '20', '25', '30', '35', '40', '45', '50']
+    index = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+    plt.plot(index, df['K-MEANS'] / 2.5, label="K-MEANS")
+    plt.plot(index, df['DBSCAN'], label="DBSCAN")
+    plt.plot(index, df['OPTICS'], label="OPTICS")
+    plt.plot(index, df['RANDOM'] / 2.5, label="RANDOM")
+    plt.xticks(index)
+    plt.title('K=4,Eps=0.0022,Minpts=7')
+    plt.legend()
+    plt.xticks(fontsize=11)
+    plt.yticks(fontsize=11)
+    plt.xlabel('抽样率/%')
+    plt.ylabel('相对误差/%')
     plt.show()
 
 
@@ -130,37 +149,93 @@ def draw_air():
 def k_to_k_means():
     df_dict = {}
     df = DataFrame()
-    for k in range(1, 11):
-        df_dict[k] = []
-        for j in range(1, 11):
-            file_path = 'result/k-means/k' + str(k) + '_Clustering_accuracy' + str(j) + '.csv'
-            data = read_csv(file_path)
-            if j == 1:
-                df = data
+    for k in range(2, 11):
+        all_df = DataFrame()
+        for m in range(1, 11):
+            df_dict[k] = []
+            for j in range(1, 11):
+                file_path = 'result/k-means/k' + str(k) + '.' + str(m) + '_Clustering_accuracy' + str(j) + '.csv'
+                data = read_csv(file_path)
+                if j == 1:
+                    df = data
+                else:
+                    df = df + data
+            df = df / 10
+            if m == 1:
+                all_df = df
             else:
-                df = df + data
-        df = df / 10
-        df_dict[k] = df.copy(deep=True)
+                all_df = all_df + df
+        all_df = all_df / 10
+        df_dict[k] = all_df.copy(deep=True)
     df_list = []
     for key in df_dict.keys():
         df_dict[key].columns = [key]
         df_list.append(df_dict[key])
     df = pd.concat(df_list, axis=1)
-    print(df)
-    df.plot(figsize=(20, 8))
+    index = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+    plt.plot(index, df[2], label="k=2")
+    plt.plot(index, df[3], label="k=3")
+    plt.plot(index, df[4], label="k=4")
+    plt.plot(index, df[5], label="k=5")
+    plt.plot(index, df[6], label="k=6")
+    plt.plot(index, df[7], label="k=7")
+    plt.plot(index, df[8], label="k=8")
+    plt.plot(index, df[9], label="k=9")
+    plt.plot(index, df[10], label="k=10")
+    plt.xticks(index)
+    plt.legend()
+    plt.xticks(fontsize=11)
+    plt.legend()
+    plt.xlabel('抽样率/%')
+    plt.ylabel('相对误差/%')
     plt.show()
 
 
 def draw_statistics():
     file_path = 'statistics_result.csv'
     df = read_csv(file_path)
-    df.drop(['all_k_means_random', 'group_k_means_random', 'group_dbscan_random', 'group_optics_random', 'group_proportion_k_means_random'], axis=1, inplace=True)
+    df.drop(['all_k_means_random', 'group_k_means_random', 'group_dbscan_random', 'group_optics_random',
+             'group_proportion_k_means_random'], axis=1, inplace=True)
     df.plot(figsize=(20, 8))
     plt.show()
 
 
+def draw_result(number):
+    # 读取csv文件
+    file_path = './result/单项测试/' + str(number) + '.csv'
+    df = read_csv(file_path)
+    # 便于画图把误差超过100的规定为100 使用change函数
+    df['K-MEANS'] = df['K-MEANS'].apply(lambda x: change(x))
+    df['DBSCAN'] = df['DBSCAN'].apply(lambda x: change(x))
+    df['OPTICS'] = df['OPTICS'].apply(lambda x: change(x))
+    df['RANDOM'] = df['RANDOM'].apply(lambda x: change(x))
+    print(df)
+    # df.drop(['DBSCAN', 'OPTICS'], axis=1, inplace=True)
+    df.index = ['5', '10', '15', '20', '25', '30', '35', '40', '45', '50']
+    index = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+    plt.plot(index, df['K-MEANS'], label="K-MEANS")
+    plt.plot(index, df['DBSCAN'], label="DBSCAN")
+    plt.plot(index, df['OPTICS'], label="OPTICS")
+    plt.plot(index, df['RANDOM'], label="RANDOM")
+    plt.xticks(index)
+    plt.legend()
+    plt.title('locaitonID=7990 (K=4,Eps=55.01,Minpts=2)')
+    plt.xticks(fontsize=11)
+    plt.yticks(fontsize=11)
+    plt.xlabel('抽样率/%')
+    plt.ylabel('相对误差/%')
+    plt.show()
+
+
 if __name__ == '__main__':
+    name_list = ['Simple random', 'Random', 'K-means', 'DBSCAN', 'OPTICS']
+    num_list = [392.0302, 440.5102, 483.746021, 488.2232247, 496.0530337]
+    plt.bar(range(len(num_list)), num_list, tick_label=name_list, width=0.5)
+    plt.ylabel('时间(单位：秒)')
+    # plt.xlabel('抽样方式')
+    plt.show()
+    # draw_result(7990)
     # draw_statistics()
     # k_to_k_means()
-    draw_unknown_data('incline2', 10)
+    # draw_unknown_data('incline', 10)
     # draw_air()
