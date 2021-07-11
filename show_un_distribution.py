@@ -1,10 +1,10 @@
 import pymysql
+import matplotlib
 import numpy as np
 import seaborn as sns
 from pylab import mpl
-import matplotlib
-from matplotlib.font_manager import FontProperties
 import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
 
 
 font = FontProperties(fname=r"c:\windows\fonts\SimHei.ttf", size=12)
@@ -15,7 +15,7 @@ def show():
     plt.rcParams['axes.unicode_minus'] = False
     sns.set_style(style='white')
     arr = np.array(t_data)
-    # sns.distplot(arr, kde=True, hist=False, label=str(number), ax=
+    # sns.distplot(arr, kde=True, hist=False, label=str(number), ax=)
     sns.distplot(arr, kde=True, hist=False)
     plt.legend()
 
