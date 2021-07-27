@@ -1,8 +1,12 @@
+'''
+利用seaborn绘制数据分布图
+查询air中某个id的数据然后绘制分布图
+与matplotlib不同的是
+seaborn画的分布图为光滑曲线
+'''
 import pymysql
-import matplotlib
 import numpy as np
 import seaborn as sns
-from pylab import mpl
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 

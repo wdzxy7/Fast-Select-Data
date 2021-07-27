@@ -1,3 +1,8 @@
+'''
+建立数据库连接
+剩的每次都去打一个数据库连接语句
+方便后期给别人使用时代码修改量
+'''
 import pymysql
 from sqlalchemy import create_engine
 

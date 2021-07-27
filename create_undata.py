@@ -1,3 +1,6 @@
+'''
+实验初期自己造不同分布数据进行测试
+'''
 import hashlib
 import pylab as pl
 import pymysql

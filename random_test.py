@@ -1,3 +1,9 @@
+'''
+该代码是对air数据集做个全部的测试
+处理数据维air中的所有数据。
+一种是random即全部数据拿来直接按照比率全体抽样
+group 是按照id分组，然后每组根据组内数量占总体的占比进行抽样
+'''
 import time
 import sql_connect
 import numpy as np
@@ -5,7 +11,6 @@ import pandas as pd
 from pandas import DataFrame
 from sklearn.cluster import KMeans
 import four_function_sampling as ffs
-import cluster_sampling as cs
 import cluster_sample_algorithm as csa
 
 

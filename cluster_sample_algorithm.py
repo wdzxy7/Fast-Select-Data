@@ -1,11 +1,13 @@
-import time
-import numpy as np
+'''
+包含本次实验所需的几大聚类算法
+算法根据实验数据要求为手写程序
+主要为 DBSCAN 和 OPTICS
+K-MEANS后期为了测试K改用官方
+'''
 import math
 import random
 import pymysql
-from decimal import Decimal
 from pandas import DataFrame
-from openpyxl import Workbook
 from sqlalchemy import create_engine
 
 

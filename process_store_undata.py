@@ -1,9 +1,11 @@
+'''
+存储实验数据代码
+由于普通有点慢换了个多线程
+'''
 import os
 import time
-import ctypes
 import pymysql
 from multiprocessing import Process
-from multiprocessing import Lock
 import multiprocessing as mp
 
 

@@ -1,3 +1,6 @@
+'''
+这个代码用于测试不同k的取值对k-means聚类抽样结果的影响
+'''
 import numpy as np
 import sql_connect
 from pandas import DataFrame

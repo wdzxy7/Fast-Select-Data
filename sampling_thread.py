@@ -1,7 +1,10 @@
+'''
+早期测试代码，数据为自己创造的数据
+利用多线程同时对10%-90%的抽样比抽样
+'''
 import threading
 import pymysql
-from pandas import Series, DataFrame
-import time
+from pandas import DataFrame
 
 connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')
 cursor = connect.cursor()

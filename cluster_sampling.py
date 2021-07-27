@@ -1,7 +1,13 @@
+'''
+为测试提供抽样方法支持
+把数据根据聚类结果分层
+数据分层后将层内数据进行抽样
+'''
 import numpy as np
 from pandas import DataFrame
 
 
+# 根据聚类结果将数据分层
 def spilt_data_by_layer(layer, data_df):
     return_df = []
     temp_df = DataFrame()
@@ -17,6 +23,7 @@ def spilt_data_by_layer(layer, data_df):
     return return_df
 
 
+# 利用公式进行抽样
 def sampling_all_data(engine, df_list, data_sum, sample_sum, database):
     denominator = 0
     lest = sample_sum
@@ -49,6 +56,7 @@ def sampling_all_data(engine, df_list, data_sum, sample_sum, database):
         df_sample.to_sql(database, con=engine, if_exists='append', index=False, chunksize=100000)
 
 
+# 根据该层样本占总量比率抽样
 def proportion_sample_data(engine, df_list, data_sum, sample_sum, database):
     df_sample = DataFrame([], columns=['value']).astype('float')
     for df in df_list:

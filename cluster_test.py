@@ -1,3 +1,7 @@
+'''
+test1用于测试eps和minpts对于聚类结果的影响
+test2用于测试k-means聚类运算时间花费
+'''
 import cluster_sample_algorithm as st
 from pandas import DataFrame
 from sklearn.cluster import KMeans

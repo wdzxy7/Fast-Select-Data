@@ -1,3 +1,7 @@
+'''
+自己复现的som代码，在计算欧式距离那里有点小问题别的没有大问题
+感觉som还是比较时候二维，一维数据可以补0升二维进行计算聚类
+'''
 import math
 import random
 import numpy as np

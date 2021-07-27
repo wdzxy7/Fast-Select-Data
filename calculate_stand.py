@@ -1,3 +1,9 @@
+'''
+计算各项数学统计值
+air_statistics 计算four_function_sampling多个表的结果的平均值
+并在他的目录下生成一个all_statistics_.csv文件
+'''
+
 import os
 import pandas as pd
 import numpy as np
@@ -201,7 +207,6 @@ def spilt_csv():
 
 
 if __name__ == '__main__':
-
     percentage = 10
     # 数据测试规模，循环变量
     run_range = {

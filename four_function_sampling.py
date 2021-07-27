@@ -1,3 +1,13 @@
+'''
+该程序与test_accuracy有点相似
+这个是一次性测试多个air当中的id
+这个主要是用于模拟当一堆数据来临时
+从整体的角度判断抽样结果的好坏。
+test_accuracy主要用于从单个数据
+优化的角度判断不同聚类方式的好坏
+存储结果以设置的抽样比率为文件名保存
+根据循环的次数会保存多个csv文件
+'''
 import re
 import time
 import numpy as np
@@ -337,7 +347,6 @@ if __name__ == '__main__':
     write_count = 1
     for i in range(10):
         main()
-        continue
         res_dict = get_error_rate()
         write()
         write_count += 1

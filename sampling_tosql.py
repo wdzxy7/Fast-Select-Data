@@ -1,10 +1,10 @@
+'''
+早期测试代码，用pymysql里面的execute插入过慢
+使用sql_engine对df直接存入数据库
+'''
 import pymysql
-from pandas import Series, DataFrame
-import time
 from sqlalchemy import create_engine
 import pandas as pd
-from pandas.api.types import CategoricalDtype
-import fsspec
 
 
 if __name__ == '__main__':

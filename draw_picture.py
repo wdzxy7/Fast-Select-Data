@@ -1,3 +1,12 @@
+'''
+绘制结果图标程序
+draw_result用于将 test_accuracy结果产生的多个csv文件读取然后画图
+draw_result用于绘制air当中某项id的抽样结果准确率
+draw_statistics
+k_to_k_means用于绘制不同k值下k-means的准确率
+draw_air绘制four_function_sampling结果的图像
+'''
+
 from matplotlib.pyplot import MultipleLocator
 import matplotlib.pyplot as plt
 from pandas import DataFrame
@@ -111,21 +120,23 @@ def draw_unknown_data(data_type, table_sum):
         else:
             df = df + data
     df = df / table_sum
+    som = read_csv('som.csv')
+    df['OPTICS'] = som['0']
     # 便于画图把误差超过100的规定为100 使用change函数
     df['K-MEANS'] = df['K-MEANS'].apply(lambda x: change(x))
     df['DBSCAN'] = df['DBSCAN'].apply(lambda x: change(x))
     df['OPTICS'] = df['OPTICS'].apply(lambda x: change(x))
     df['RANDOM'] = df['RANDOM'].apply(lambda x: change(x))
-    print(df)
     # df.drop(['DBSCAN', 'OPTICS'], axis=1, inplace=True)
     df.index = ['5', '10', '15', '20', '25', '30', '35', '40', '45', '50']
     index = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-    plt.plot(index, df['K-MEANS'] / 2.5, label="K-MEANS")
+    print(df)
+    plt.plot(index, df['K-MEANS'], label="K-MEANS")
     plt.plot(index, df['DBSCAN'], label="DBSCAN")
-    plt.plot(index, df['OPTICS'], label="OPTICS")
-    plt.plot(index, df['RANDOM'] / 2.5, label="RANDOM")
+    plt.plot(index, df['OPTICS'], label="SOM")
+    plt.plot(index, df['RANDOM'], label="RANDOM")
     plt.xticks(index)
-    plt.title('K=4,Eps=0.0022,Minpts=7')
+    # plt.title('K=4,Eps=0.0022,Minpts=7')
     plt.legend()
     plt.xticks(fontsize=11)
     plt.yticks(fontsize=11)
@@ -215,11 +226,11 @@ def draw_result(number):
     index = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
     plt.plot(index, df['K-MEANS'], label="K-MEANS")
     plt.plot(index, df['DBSCAN'], label="DBSCAN")
-    plt.plot(index, df['OPTICS'], label="OPTICS")
+    plt.plot(index, df['OPTICS'], label="SOM")
     plt.plot(index, df['RANDOM'], label="RANDOM")
     plt.xticks(index)
     plt.legend()
-    plt.title('locaitonID=7990 (K=4,Eps=55.01,Minpts=2)')
+    plt.title('locaitonID=7875 (K=4,Eps=2.01,Minp_size=28)')
     plt.xticks(fontsize=11)
     plt.yticks(fontsize=11)
     plt.xlabel('抽样率/%')
@@ -228,13 +239,13 @@ def draw_result(number):
 
 
 if __name__ == '__main__':
-    name_list = ['Simple random', 'Random', 'K-means', 'DBSCAN', 'OPTICS']
-    num_list = [392.0302, 440.5102, 483.746021, 488.2232247, 496.0530337]
+    name_list = ['Simple random', 'Random', 'K-means', 'DBSCAN', 'SOM']
+    num_list = [392.0302, 440.5102, 483.746021, 488.2232247, 340.7934525]
     plt.bar(range(len(num_list)), num_list, tick_label=name_list, width=0.5)
     plt.ylabel('时间(单位：秒)')
-    # plt.xlabel('抽样方式')
+    plt.xlabel('抽样方式')
     plt.show()
-    # draw_result(7990)
+    # draw_result(7875)
     # draw_statistics()
     # k_to_k_means()
     # draw_unknown_data('incline', 10)

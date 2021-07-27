@@ -1,12 +1,6 @@
-from decimal import Decimal
-import pymysql
-from pandas import Series, DataFrame
 import time
-from sqlalchemy import create_engine
-import pandas as pd
-from pandas.api.types import CategoricalDtype
-import fsspec
-
+import pymysql
+from pandas import DataFrame
 
 if __name__ == '__main__':
     connect = pymysql.connect(host='localhost', port=3308, user='root', passwd='', db='', charset='utf8')

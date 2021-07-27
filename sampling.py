@@ -1,11 +1,10 @@
+'''
+早期测试代码，对自己创造的数据抽样
+'''
 from decimal import Decimal
 import pymysql
-from pandas import Series, DataFrame
+from pandas import DataFrame
 import time
-from sqlalchemy import create_engine
-import pandas as pd
-from pandas.api.types import CategoricalDtype
-import fsspec
 
 
 if __name__ == '__main__':

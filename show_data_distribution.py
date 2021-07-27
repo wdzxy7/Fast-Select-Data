@@ -1,4 +1,7 @@
-import hashlib
+'''
+展示air数据集中，某个数据的分布
+图形维柱状图
+'''
 import pylab as pl
 import pymysql
 import numpy as np

@@ -1,3 +1,7 @@
+'''
+存储实验数据的代码
+普通存入数据库
+'''
 import os
 import time
 import pymysql
