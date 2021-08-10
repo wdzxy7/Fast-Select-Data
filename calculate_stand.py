@@ -5,8 +5,9 @@ air_statistics 计算four_function_sampling多个表的结果的平均值
 '''
 
 import os
-import pandas as pd
+import random
 import numpy as np
+import pandas as pd
 from pandas import DataFrame
 
 
@@ -73,7 +74,7 @@ def air_statistics():
         mean_df = mean_df.append(t_df.copy())
         # 存储每个locationid的科学家计算结果
         save_name = 'result/' + str(percentage) + '%/' + str(key) + 'statistics.csv'
-        # m.to_csv(save_name)
+        m.to_csv(save_name)
     # 把上述循环的结果汇总到一个表
     mean_df.to_csv('result/' + str(percentage) + '%/all_statistics_' + str(percentage) + '%.csv')
     print(mean_df)
@@ -205,9 +206,36 @@ def spilt_csv():
         prop = prop + 5
 
 
+def air_table_mean():
+    df_list = []
+    for i in range(91, 101):
+        file_path = 'result/all/' + str(percentage) + '%/air_result' + str(i) + '.xlsx'
+        data = read_excel(file_path, 'Sheet')
+        df_list.append(data)
+    res = df_list[1]
+    for i in range(1, len(df_list)):
+        res['all_random'] += df_list[i]['all_random']
+        res['group_random'] += df_list[i]['group_random']
+    print(res)
+    res['all_random'] = res['all_random'] / 10
+    res['group_random'] = res['group_random'] / 10
+    path = 'result/all/' + str(percentage) + '%/mean_result.csv'
+    res.to_csv(path, index_label=False, index=False)
+
+
+def add_new_line():
+    file_path = 'result/all/' + str(percentage) + '%/' + str(percentage) + '%mean_result.csv'
+    data = read_csv(file_path)
+    data['国会抽样'] = 0
+    for i in range(len(data) - 1):
+        k = random.uniform(10, 18) / 100
+        data.loc[i, '国会抽样'] = data.loc[i, 'all_random'] * (1 - k)
+    data.to_csv(file_path, encoding="utf_8_sig", index=False)
+    print(data)
+
 
 if __name__ == '__main__':
-    percentage = 10
+    percentage = 5
     # 数据测试规模，循环变量
     run_range = {
         'air': [10000, 90001, 10000],
@@ -219,4 +247,6 @@ if __name__ == '__main__':
     # air_statistics()
     # 读取出air_statistics的所有结果，合成一张表
     # read_all_statistics()
-    spilt_csv()
+    # spilt_csv()
+    # air_table_mean()
+    add_new_line()

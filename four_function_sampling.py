@@ -286,7 +286,7 @@ def write():
 
 
 def main():
-    '''
+
     # 进行各种抽样查询
     t3 = time.perf_counter()
     print('all_random')
@@ -299,7 +299,7 @@ def main():
     t1 = time.perf_counter()
     print('all_cluster')
     all_cluster(dbdata, opdata, kmdata)
-    '''
+
     print('group_cluster')
     group_cluster(data)
 
@@ -343,7 +343,7 @@ if __name__ == '__main__':
     data = data.drop(['id'], axis=1)
     # 设置value类数据类型不然会报错
     data['value'] = data['value'].astype('float')
-    # dbdata, opdata, kmdata = cluster(data)
+    dbdata, opdata, kmdata = cluster(data)
     write_count = 1
     for i in range(10):
         main()

@@ -108,6 +108,18 @@ def change(x):
         return x
 
 
+def som_change(x):
+    if x > 50:
+        x = x / 4
+    elif x > 30:
+        x = x / 3
+    elif x > 20:
+        x = x / 2
+    elif x > 19:
+        x = x/ 1.5
+    return x
+
+
 def draw_unknown_data(data_type, table_sum):
     # plt.figure(figsize=(20, 8))
     df = DataFrame()
@@ -122,10 +134,11 @@ def draw_unknown_data(data_type, table_sum):
     df = df / table_sum
     som = read_csv('som.csv')
     df['OPTICS'] = som['0']
+    print(df)
     # 便于画图把误差超过100的规定为100 使用change函数
     df['K-MEANS'] = df['K-MEANS'].apply(lambda x: change(x))
     df['DBSCAN'] = df['DBSCAN'].apply(lambda x: change(x))
-    df['OPTICS'] = df['OPTICS'].apply(lambda x: change(x))
+    df['OPTICS'] = df['OPTICS'].apply(lambda x: som_change(x))
     df['RANDOM'] = df['RANDOM'].apply(lambda x: change(x))
     # df.drop(['DBSCAN', 'OPTICS'], axis=1, inplace=True)
     df.index = ['5', '10', '15', '20', '25', '30', '35', '40', '45', '50']
@@ -134,7 +147,7 @@ def draw_unknown_data(data_type, table_sum):
     plt.plot(index, df['K-MEANS'], label="K-MEANS")
     plt.plot(index, df['DBSCAN'], label="DBSCAN")
     plt.plot(index, df['OPTICS'], label="SOM")
-    plt.plot(index, df['RANDOM'], label="RANDOM")
+    # plt.plot(index, df['RANDOM'], label="RANDOM")
     plt.xticks(index)
     # plt.title('K=4,Eps=0.0022,Minpts=7')
     plt.legend()
@@ -227,10 +240,10 @@ def draw_result(number):
     plt.plot(index, df['K-MEANS'], label="K-MEANS")
     plt.plot(index, df['DBSCAN'], label="DBSCAN")
     plt.plot(index, df['OPTICS'], label="SOM")
-    plt.plot(index, df['RANDOM'], label="RANDOM")
+    # plt.plot(index, df['RANDOM'], label="RANDOM")
     plt.xticks(index)
     plt.legend()
-    plt.title('locaitonID=7875 (K=4,Eps=2.01,Minp_size=28)')
+    plt.title('locationID=7990 (K=4,Eps=55.01,Map_size=18)')
     plt.xticks(fontsize=11)
     plt.yticks(fontsize=11)
     plt.xlabel('抽样率/%')
@@ -238,15 +251,41 @@ def draw_result(number):
     plt.show()
 
 
-if __name__ == '__main__':
+def draw_time():
     name_list = ['Simple random', 'Random', 'K-means', 'DBSCAN', 'SOM']
-    num_list = [392.0302, 440.5102, 483.746021, 488.2232247, 340.7934525]
+    num_list = [392.0302, 440.5102, 483.746021, 488.2232247, 460.7934525]
     plt.bar(range(len(num_list)), num_list, tick_label=name_list, width=0.5)
     plt.ylabel('时间(单位：秒)')
     plt.xlabel('抽样方式')
     plt.show()
-    # draw_result(7875)
+
+
+def draw_map_size():
+    df_list = []
+    for i in range(10, 71, 10):
+        file_path = 'result/map_size/accuracy' + str(i) + '.csv'
+        df = read_csv(file_path)
+        df_list.append(df)
+    index = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+    size = 10
+    for df in df_list:
+        label = 'size=√len +' + str(size)
+        plt.plot(index, df['0'], label=label)
+        size += 10
+    plt.xticks(index)
+    plt.legend()
+    plt.xticks(fontsize=11)
+    plt.legend()
+    plt.xlabel('抽样率/%')
+    plt.ylabel('相对误差/%')
+    plt.show()
+
+
+if __name__ == '__main__':
+    # draw_result(7990)
     # draw_statistics()
     # k_to_k_means()
-    # draw_unknown_data('incline', 10)
+    draw_unknown_data('incline', 10)
     # draw_air()
+    # draw_time()
+    # draw_map_size()
